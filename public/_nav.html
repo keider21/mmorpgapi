@@ -1,0 +1,15 @@
+<nav style="position:sticky;top:0;z-index:50;background:#0f1115;border-bottom:1px solid #222;padding:10px;display:flex;gap:8px">
+  <a href="/index.html"   style="color:#fff;text-decoration:none;padding:6px 10px;background:#222;border-radius:6px">Inicio</a>
+  <a href="/admin.html"   style="color:#fff;text-decoration:none;padding:6px 10px;background:#222;border-radius:6px">Admin</a>
+  <a href="/player.html"  style="color:#fff;text-decoration:none;padding:6px 10px;background:#222;border-radius:6px">Jugador</a>
+  <a href="/set.html"     style="color:#fff;text-decoration:none;padding:6px 10px;background:#222;border-radius:6px">Ajustes</a>
+</nav>
+<script>
+(async ()=>{
+  // resalta el activo
+  const path = location.pathname;
+  document.querySelectorAll('nav a').forEach(a=>{
+    if(a.getAttribute('href')===path){ a.style.background='#e86d3b'; }
+  });
+})();
+</script>

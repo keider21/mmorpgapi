@@ -2,179 +2,139 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>MMORPG Admin</title>
   <style>
-    body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;margin:20px}
-    h1{margin-bottom:12px}
-    fieldset{border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:16px}
-    legend{padding:0 6px;font-weight:600}
-    label{display:block;font-size:12px;color:#555;margin-top:8px}
-    input{width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px}
-    .row{display:flex;gap:8px;margin:8px 0}
-    .row > *{flex:1}
-    button{padding:8px 12px;border:0;border-radius:8px;background:#111;color:#fff}
-    button.secondary{background:#777}
-    pre{background:#000;color:#0f0;padding:10px;border-radius:8px;min-height:32px;overflow:auto}
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, Arial, sans-serif; margin:16px; }
+    h1{margin:0 0 16px}
+    .card{border:1px solid #8884; border-radius:10px; padding:12px; margin:12px 0;}
+    .row{display:flex; gap:8px; flex-wrap:wrap}
+    .row>*{flex:1}
+    input,button{padding:10px; border-radius:8px; border:1px solid #8884; width:100%}
+    button{background:#111; color:#fff; border:none}
+    pre{background:#000; color:#0f0; padding:10px; border-radius:8px; overflow:auto}
+    small{opacity:.7}
   </style>
 </head>
 <body>
   <h1>MMORPG Admin</h1>
 
-  <fieldset>
-    <legend>Progreso global</legend>
+  <!-- Progreso global -->
+  <div class="card">
+    <h3>Progreso global</h3>
     <div class="row">
-      <button id="btnView">Ver progreso</button>
-      <button id="btnPlus5" class="secondary">+5</button>
-      <button id="btnPlus100" class="secondary">+100</button>
+      <button id="btnVerGlobal">Ver progreso</button>
+      <button id="btnAdd5">+5</button>
+      <button id="btnAdd100">+100</button>
     </div>
-
-    <label>current</label>
-    <input id="inpCurrent" type="number" inputmode="numeric" />
-
-    <label>goal</label>
-    <input id="inpGoal" type="number" inputmode="numeric" />
-
-    <label>stage</label>
-    <input id="inpStage" type="number" inputmode="numeric" />
-
+    <small>current</small>
+    <input id="g_current" type="number" placeholder="0" />
+    <small>goal</small>
+    <input id="g_goal" type="number" placeholder="10000" />
+    <small>stage</small>
+    <input id="g_stage" type="number" placeholder="0" />
     <div class="row">
-      <button id="btnSave">Guardar</button>
+      <button id="btnSaveGlobal">Guardar</button>
     </div>
-  </fieldset>
+  </div>
 
-  <fieldset>
-    <legend>Jugadores</legend>
+  <!-- Jugadores -->
+  <div class="card">
+    <h3>Jugadores</h3>
     <div class="row">
       <button id="btnList">Listar</button>
     </div>
-
-    <label>name (único)</label>
-    <input id="inpName" type="text" />
-
-    <label>level</label>
-    <input id="inpLevel" type="number" inputmode="numeric" />
-
+    <small>name (único)</small>
+    <input id="p_name" placeholder="Jugador1" />
+    <small>level</small>
+    <input id="p_level" type="number" placeholder="1" />
+    <small>xp (opcional)</small>
+    <input id="p_xp" type="number" placeholder="0" />
     <div class="row">
       <button id="btnUpsert">Crear/Actualizar</button>
     </div>
-  </fieldset>
+  </div>
 
-  <h3>Salida</h3>
-  <pre id="out">-</pre>
+  <div class="card">
+    <h3>Salida</h3>
+    <pre id="out">-</pre>
+  </div>
 
-  <script>
-    // Base de la API: mismo host (Cloud Run) donde sirve este admin.html
-    const API = "";
+<script>
+const BASE = ""; // está en el mismo dominio (Cloud Run)
 
-    const $ = (id) => document.getElementById(id);
-    const out = $("out");
-    const show = (obj) => out.textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+const out = (x) => {
+  const pre = document.getElementById("out");
+  pre.textContent = typeof x === "string" ? x : JSON.stringify(x, null, 2);
+};
 
-    async function getGlobal() {
-      const r = await fetch(`${API}/global`);
-      if (!r.ok) throw new Error(`GET /global -> ${r.status}`);
-      return r.json();
-    }
+// Helpers
+async function getJSON(path){
+  const r = await fetch(BASE + path, { headers: { "Accept": "application/json" } });
+  if(!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+async function postJSON(path, body){
+  const r = await fetch(BASE + path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept":"application/json" },
+    body: JSON.stringify(body)
+  });
+  if(!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
 
-    async function patchGlobal(payload) {
-      const r = await fetch(`${API}/global`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      if (!r.ok) throw new Error(`PATCH /global -> ${r.status}`);
-      return r.json();
-    }
+// GLOBAL
+async function verGlobal(){
+  try{
+    const data = await getJSON("/global");
+    document.getElementById("g_current").value = data.current ?? 0;
+    document.getElementById("g_goal").value = data.goal ?? 10000;
+    document.getElementById("g_stage").value = data.stage ?? 0;
+    out(data);
+  }catch(e){ out("Error GET /global -> " + e.message); }
+}
+async function guardarGlobal(deltaSum){
+  try{
+    const cur = Number(document.getElementById("g_current").value || 0) + (deltaSum||0);
+    const goal = Number(document.getElementById("g_goal").value || 0);
+    const stage = Number(document.getElementById("g_stage").value || 0);
+    const res = await postJSON("/global", { current: cur, goal, stage });
+    // recargar valores desde servidor
+    await verGlobal();
+    out(res);
+  }catch(e){ out("Error POST /global -> " + e.message); }
+}
 
-    async function listPlayers() {
-      const r = await fetch(`${API}/players`);
-      if (!r.ok) throw new Error(`GET /players -> ${r.status}`);
-      return r.json();
-    }
+// PLAYERS
+async function listar(){
+  try{ out(await getJSON("/players")); }
+  catch(e){ out("Error GET /players -> " + e.message); }
+}
+async function upsert(){
+  try{
+    const name = document.getElementById("p_name").value.trim();
+    const level = Number(document.getElementById("p_level").value || 1);
+    const xpStr = document.getElementById("p_xp").value;
+    const body = { name, level };
+    if (xpStr !== "") body.xp = Number(xpStr); // opcional
 
-    async function upsertPlayer(name, data) {
-      const r = await fetch(`${API}/players/${encodeURIComponent(name)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-      if (!r.ok) throw new Error(`PUT /players/${name} -> ${r.status}`);
-      return r.json();
-    }
+    const res = await postJSON("/players/create", body);
+    out(res);
+  }catch(e){ out("Error POST /players/create -> " + e.message); }
+}
 
-    function readGlobalInputs() {
-      const current = parseInt($("inpCurrent").value || "0", 10);
-      const goal    = parseInt($("inpGoal").value || "0", 10);
-      const stage   = parseInt($("inpStage").value || "0", 10);
-      return { current, goal, stage };
-    }
+// Eventos
+document.getElementById("btnVerGlobal").onclick = verGlobal;
+document.getElementById("btnSaveGlobal").onclick = () => guardarGlobal(0);
+document.getElementById("btnAdd5").onclick = () => guardarGlobal(5);
+document.getElementById("btnAdd100").onclick = () => guardarGlobal(100);
+document.getElementById("btnList").onclick = listar;
+document.getElementById("btnUpsert").onclick = upsert;
 
-    function fillGlobalInputs(data) {
-      $("inpCurrent").value = data.current ?? 0;
-      $("inpGoal").value    = data.goal ?? 0;
-      $("inpStage").value   = data.stage ?? 0;
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      $("btnView").addEventListener("click", async () => {
-        try {
-          const g = await getGlobal();
-          fillGlobalInputs(g);
-          show(g);
-        } catch (e) { show(String(e)); }
-      });
-
-      $("btnPlus5").addEventListener("click", async () => {
-        try {
-          let { current, goal, stage } = readGlobalInputs();
-          if (!Number.isFinite(current)) {
-            const g = await getGlobal();
-            ({ current, goal, stage } = g);
-          }
-          const res = await patchGlobal({ current: current + 5, goal, stage });
-          fillGlobalInputs(res);
-          show(res);
-        } catch (e) { show(String(e)); }
-      });
-
-      $("btnPlus100").addEventListener("click", async () => {
-        try {
-          let { current, goal, stage } = readGlobalInputs();
-          if (!Number.isFinite(current)) {
-            const g = await getGlobal();
-            ({ current, goal, stage } = g);
-          }
-          const res = await patchGlobal({ current: current + 100, goal, stage });
-          fillGlobalInputs(res);
-          show(res);
-        } catch (e) { show(String(e)); }
-      });
-
-      $("btnSave").addEventListener("click", async () => {
-        try {
-          const payload = readGlobalInputs();
-          const res = await patchGlobal(payload);
-          fillGlobalInputs(res);
-          show(res);
-        } catch (e) { show(String(e)); }
-      });
-
-      $("btnList").addEventListener("click", async () => {
-        try { show(await listPlayers()); }
-        catch (e) { show(String(e)); }
-      });
-
-      $("btnUpsert").addEventListener("click", async () => {
-        try {
-          const name = $("inpName").value.trim();
-          const level = parseInt($("inpLevel").value || "0", 10);
-          if (!name) return show("Pon un nombre de jugador");
-          const res = await upsertPlayer(name, { level });
-          show(res);
-        } catch (e) { show(String(e)); }
-      });
-    });
-  </script>
+// carga inicial
+verGlobal().catch(()=>{});
+</script>
 </body>
 </html>

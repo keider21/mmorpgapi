@@ -287,7 +287,65 @@ app.delete("/quests/:id", async (req, res) => {
     sendErr(res, "failed_delete_quest");
   }
 });
+// ================= NUEVAS RUTAS =================
 
+// 1) Borrar jugador por "name"
+app.post("/players/delete", async (req, res) => {
+  try {
+    const { name } = req.body || {};
+    if (!name) return res.status(400).json({ error: "name requerido" });
+
+    const snap = await db
+      .collection("world_progress")
+      .doc("global")
+      .collection("world_progress")
+      .where("name", "==", name)
+      .get();
+
+    if (snap.empty) return res.status(404).json({ ok: false, msg: "no existe" });
+
+    const batch = db.batch();
+    snap.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+
+    res.json({ ok: true, deleted: snap.size });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 2) Top 10 por XP
+app.get("/leaderboard", async (_req, res) => {
+  try {
+    const qs = await db
+      .collection("world_progress")
+      .doc("global")
+      .collection("world_progress")
+      .orderBy("xp", "desc")
+      .limit(10)
+      .get();
+
+    const top = qs.docs.map(d => ({ id: d.id, ...d.data() }));
+    res.json(top);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 3) Sumar XP rápido a un jugador
+app.post("/players/addxp", async (req, res) => {
+  try {
+    const { name, xp = 0 } = req.body || {};
+    if (!name) return res.status(400).json({ error: "name requerido" });
+    const delta = Number(xp) || 0;
+
+    const coll = db.collection("world_progress").doc("global").collection("world_progress");
+    const snap = await coll.where("name","==",name).limit(1).get();
+    if (snap.empty) return res.status(404).json({ error: "jugador no existe" });
+
+    const ref = snap.docs[0].ref;
+    await ref.update({ xp: db.constructor.FieldValue.increment(delta) });
+
+    const nuevo = (await ref.get()).data();
+    res.json({ ok:true, name, xp:nuevo.xp });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 // ---- Arranque ---------------------------------------------------------------
 app.listen(PORT, () => {
   console.log(`mmorpgapi listening on ${PORT}`);

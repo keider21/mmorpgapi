@@ -1,33 +1,26 @@
-const express = require("express");
+import express from "express";
+import { Firestore } from "@google-cloud/firestore";
+
 const app = express();
+const port = process.env.PORT || 8080;
 
-// Cloud Run te da el puerto en PORT
-const PORT = process.env.PORT || 8080;
+// Inicializar Firestore
+const firestore = new Firestore();
 
-// Para que acepte JSON si más adelante haces POST
-app.use(express.json());
-
-// Ruta principal
-app.get("/", (req, res) => {
-  res.send("Hello World desde mmorpgapi!");
+// Ruta para probar lectura de jugadores
+app.get("/players", async (req, res) => {
+  const snapshot = await firestore.collection("players").get();
+  const players = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  res.json(players);
 });
 
-// Estado simple en JSON
-app.get("/status", (req, res) => {
-  res.json({ ok: true, service: "mmorpgapi", time: new Date().toISOString() });
+// Ruta para crear un jugador
+app.post("/players", express.json(), async (req, res) => {
+  const { name, level } = req.body;
+  const docRef = await firestore.collection("players").add({ name, level });
+  res.json({ id: docRef.id, name, level });
 });
 
-// Suma dos números: /sum?a=2&b=3  -> { result: 5 }
-app.get("/sum", (req, res) => {
-  const a = Number(req.query.a);
-  const b = Number(req.query.b);
-  if (Number.isNaN(a) || Number.isNaN(b)) {
-    return res.status(400).json({ error: "Usa /sum?a=NUM&b=NUM" });
-  }
-  res.json({ result: a + b });
-});
-
-// Arrancar servidor
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
+app.listen(port, () => {
+  console.log(`API MMORPG corriendo en puerto ${port}`);
 });

@@ -1,152 +1,182 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MMORPG Admin</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body{font-family:system-ui,Arial,sans-serif;margin:16px;max-width:760px}
-    h1{margin:0 0 16px}
-    .card{border:1px solid #8884;border-radius:12px;padding:12px;margin:12px 0}
-    .row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
-    .row>*{flex:1}
-    input,button{padding:10px;border-radius:10px;border:1px solid #8884;font-size:16px;width:100%}
-    button{background:#111;color:#fff;border:none}
-    button.secondary{background:#666}
-    pre{background:#000;color:#0f0;padding:12px;border-radius:10px;overflow:auto;min-height:44px}
-    label{font-size:12px;opacity:.8;margin-top:4px;display:block}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MMORPG Admin</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, Arial, sans-serif; margin:16px; }
+  h1 { margin: 8px 0 16px; }
+  .card { border: 1px solid #8884; border-radius: 12px; padding: 12px; margin-bottom: 16px; }
+  .row { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  @media (min-width:600px){ .row-3 { grid-template-columns: repeat(3,1fr); } .row-2{grid-template-columns: repeat(2,1fr);} }
+  button { padding:10px; border-radius:10px; border:0; background:#111; color:#fff; font-weight:600; }
+  input, textarea { padding:10px; border:1px solid #8886; border-radius:10px; width:100%; box-sizing:border-box; }
+  .muted { font-size: 12px; opacity:.8; }
+  .stack { display:flex; gap:8px; flex-wrap:wrap; }
+  .warn { color:#c00; font-weight:700; }
+  pre { background:#000; color:#0f0; padding:10px; border-radius:10px; overflow:auto; min-height:54px; }
+  label { font-size: 12px; opacity:.8; }
+</style>
 </head>
 <body>
   <h1>MMORPG Admin</h1>
 
+  <!-- ACCESO -->
   <div class="card">
-    <h3>Progreso global</h3>
-    <div class="row">
-      <button type="button" onclick="loadGlobal()">Ver progreso</button>
-      <button type="button" class="secondary" onclick="saveGlobal(5)">+5</button>
-      <button type="button" class="secondary" onclick="saveGlobal(100)">+100</button>
+    <div class="row row-2">
+      <div>
+        <label>Admin secret</label>
+        <input id="secret" type="password" placeholder="Escribe tu clave…" />
+      </div>
+      <div class="stack" style="align-items:end">
+        <button id="btnSaveSecret">Guardar clave</button>
+        <button id="btnClearSecret">Olvidar clave</button>
+      </div>
     </div>
-    <label>current</label>
-    <input id="g_current" type="number" inputmode="numeric" placeholder="0" />
-    <label>goal</label>
-    <input id="g_goal" type="number" inputmode="numeric" placeholder="10000" />
-    <label>stage</label>
-    <input id="g_stage" type="number" inputmode="numeric" placeholder="0" />
+    <div class="muted">La clave se envía en el header <code>x-admin-secret</code> y se guarda localmente (localStorage).</div>
+  </div>
+
+  <!-- PROGRESO GLOBAL -->
+  <div class="card">
+    <h2>Progreso global</h2>
+    <div class="stack">
+      <button id="btnViewGlobal">Ver progreso</button>
+      <button id="btnPlus5">+5</button>
+      <button id="btnPlus100">+100</button>
+    </div>
     <div class="row">
-      <button type="button" onclick="saveGlobal(0)">Guardar</button>
+      <div>
+        <label>current</label>
+        <input id="g_current" type="number" value="0" />
+      </div>
+      <div>
+        <label>goal</label>
+        <input id="g_goal" type="number" value="10000" />
+      </div>
+      <div>
+        <label>stage</label>
+        <input id="g_stage" type="number" value="0" />
+      </div>
+    </div>
+    <div style="margin-top:8px">
+      <button id="btnSaveGlobal" style="width:100%">Guardar</button>
     </div>
   </div>
 
+  <!-- JUGADORES -->
   <div class="card">
-    <h3>Jugadores</h3>
-    <div class="row">
-      <button type="button" onclick="listPlayers()">Listar</button>
-      <button type="button" onclick="top10()">Top 10 (XP)</button>
+    <h2>Jugadores</h2>
+    <div class="stack">
+      <button id="btnList">Listar</button>
+      <button id="btnTop">Top 10 (XP)</button>
     </div>
-    <label>name (único)</label>
-    <input id="p_name" placeholder="Jugador1" />
-    <label>level</label>
-    <input id="p_level" type="number" inputmode="numeric" placeholder="1" />
-    <label>xp (opcional)</label>
-    <input id="p_xp" type="number" inputmode="numeric" placeholder="0" />
     <div class="row">
-      <button type="button" onclick="upsertPlayer()">Crear/Actualizar</button>
-      <button type="button" class="secondary" onclick="addXp()">+50 XP</button>
-      <button type="button" class="secondary" onclick="deletePlayer()">Borrar jugador</button>
+      <div>
+        <label>name (único)</label>
+        <input id="p_name" placeholder="Jugador1" />
+      </div>
+      <div>
+        <label>level</label>
+        <input id="p_level" type="number" value="1" />
+      </div>
+      <div>
+        <label>xp (opcional)</label>
+        <input id="p_xp" type="number" value="0" />
+      </div>
+    </div>
+    <div class="stack" style="margin-top:8px">
+      <button id="btnUpsert">Crear/Actualizar</button>
+      <button id="btnAdd50">+50 XP</button>
+      <button id="btnDelete" style="background:#700">Borrar jugador</button>
     </div>
   </div>
 
+  <!-- SALIDA -->
   <div class="card">
-    <h3>Salida</h3>
-    <pre id="out">—</pre>
+    <h2>Salida</h2>
+    <pre id="out">-</pre>
   </div>
 
 <script>
-  // Misma API (mismo dominio)
-  const API = "";
-
+  // ========= CONFIG =========
+  const BASE = "https://3500480.us-central1.run.app"; // TU URL
   const $ = (id) => document.getElementById(id);
-  const show = (x) => { $("out").textContent = typeof x === "string" ? x : JSON.stringify(x, null, 2); };
+  const out = $("out");
 
-  async function getJSON(path){
-    const r = await fetch(API + path, { headers: { "Accept":"application/json" }});
-    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-    return r.json();
+  // Persistir/leer secret
+  function loadSecret(){
+    const s = localStorage.getItem("admin_secret") || "";
+    $("secret").value = s;
+    return s;
   }
-  async function sendJSON(method, path, body){
-    const r = await fetch(API + path, {
-      method,
-      headers: { "Content-Type":"application/json", "Accept":"application/json" },
-      body: JSON.stringify(body||{})
-    });
-    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-    return r.json();
+  function saveSecret(){
+    localStorage.setItem("admin_secret", $("secret").value);
+    log("✔ Secret guardado localmente");
+  }
+  function clearSecret(){
+    localStorage.removeItem("admin_secret");
+    $("secret").value = "";
+    log("✔ Secret borrado de este dispositivo");
   }
 
-  // ---- GLOBAL ----
-  async function loadGlobal(){
-    try {
-      const g = await getJSON("/global");
-      $("g_current").value = g.current ?? 0;
-      $("g_goal").value    = g.goal ?? 10000;
-      $("g_stage").value   = g.stage ?? 0;
-      show(g);
-    } catch(e){ show("Error GET /global -> " + e.message); }
+  function headers(json=true){
+    const h = {};
+    if(json) h["Content-Type"] = "application/json";
+    const s = $("secret").value.trim();
+    if(s) h["x-admin-secret"] = s;
+    return h;
   }
+  function log(obj){ out.textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2); }
+
+  // ========= GLOBAL =========
+  async function viewGlobal(){
+    try{
+      const r = await fetch(`${BASE}/global`, { headers: headers(false) });
+      const data = await r.json();
+      $("g_current").value = data.current ?? 0;
+      $("g_goal").value    = data.goal ?? 10000;
+      $("g_stage").value   = data.stage ?? 0;
+      log(data);
+    }catch(e){ log({error:String(e)}) }
+  }
+
   async function saveGlobal(delta=0){
-    try {
-      const current = Number($("g_current").value || 0) + delta;
-      const goal    = Number($("g_goal").value || 0);
-      const stage   = Number($("g_stage").value || 0);
-      const res = await sendJSON("PATCH", "/global", { current, goal, stage });
-      await loadGlobal();
-      show(res);
-    } catch(e){ show("Error PATCH /global -> " + e.message); }
+    try{
+      const current = Number($("g_current").value)||0;
+      const goal    = Number($("g_goal").value)||0;
+      const stage   = Number($("g_stage").value)||0;
+      const body = { current: current + delta, goal, stage };
+
+      const r = await fetch(`${BASE}/global`, {
+        method: "PATCH",
+        headers: headers(),
+        body: JSON.stringify(body)
+      });
+      log(await r.json());
+      if(delta!==0) await viewGlobal();
+    }catch(e){ log({error:String(e)}) }
   }
 
-  // ---- PLAYERS ----
+  // ========= PLAYERS =========
   async function listPlayers(){
-    try { show(await getJSON("/players?limit=50")); }
-    catch(e){ show("Error GET /players -> " + e.message); }
-  }
-  async function top10(){
-    try { show(await getJSON("/leaderboard?limit=10")); }
-    catch(e){ show("Error GET /leaderboard -> " + e.message); }
-  }
-  async function upsertPlayer(){
-    try {
-      const name  = $("p_name").value.trim();
-      if (!name) return show("Pon un name");
-      const level = Number($("p_level").value || 1);
-      const xpStr = $("p_xp").value;
-      const body  = {};
-      if (!Number.isNaN(level)) body.level = level;
-      if (xpStr !== "") body.xp = Number(xpStr);
-      const res = await sendJSON("PUT", `/players/${encodeURIComponent(name)}`, body);
-      show(res);
-    } catch(e){ show("Error PUT /players/:name -> " + e.message); }
-  }
-  async function addXp(){
-    try {
-      const name = $("p_name").value.trim();
-      if (!name) return show("Pon un name");
-      const res = await sendJSON("POST", "/players/addxp", { name, xp: 50 });
-      show(res);
-    } catch(e){ show("Error POST /players/addxp -> " + e.message); }
-  }
-  async function deletePlayer(){
-    try {
-      const name = $("p_name").value.trim();
-      if (!name) return show("Pon un name");
-      const res = await sendJSON("POST", "/players/delete", { name });
-      show(res);
-    } catch(e){ show("Error POST /players/delete -> " + e.message); }
+    try{
+      const r = await fetch(`${BASE}/players?limit=50`, { headers: headers(false) });
+      log(await r.json());
+    }catch(e){ log({error:String(e)}) }
   }
 
-  // Carga inicial (si falla, al menos verás el error en "Salida")
-  loadGlobal().catch(()=>{});
-</script>
-</body>
-</html>
+  async function topXP(){
+    try{
+      const r = await fetch(`${BASE}/leaderboard?limit=10`, { headers: headers(false) });
+      log(await r.json());
+    }catch(e){ log({error:String(e)}) }
+  }
+
+  async function upsertPlayer(){
+    try{
+      const name  = $("p_name").value.trim();
+      if(!name) return log({error:"name requerido"});
+      const level = Number($("p_level").value)||1;
+      const xp    = Number($

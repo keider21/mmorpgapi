@@ -1,101 +1,394 @@
-<!-- public/game.html – Panel público para jugadores -->
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MMORPG – Jugador</title>
-  <style>
-    :root { --bg:#0b0d10; --fg:#f4f6fb; --card:#151821; --muted:#a9b2c0; --ok:#43d17a; }
-    *{box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
-    body{margin:0;background:var(--bg);color:var(--fg);padding:16px}
-    h1{margin:0 0 10px}
-    .card{background:var(--card);padding:14px;border-radius:12px;margin:12px 0}
-    label{font-size:12px;color:var(--muted);display:block;margin:6px 0 4px}
-    input{width:100%;padding:10px;border:1px solid #293243;background:#0d0f14;color:var(--fg);border-radius:8px}
-    button{border:0;padding:10px 14px;border-radius:10px;background:#273142;color:#fff;cursor:pointer}
-    .ok{background:var(--ok);color:#000;font-weight:700}
-    .row{display:grid;grid-template-columns:1fr;gap:10px}
-    @media(min-width:900px){ .row-2{grid-template-columns:1fr 1fr} }
-    pre{background:#000;color:#3cff71;padding:12px;border-radius:10px;overflow:auto}
-    .btnline{display:flex;gap:8px;flex-wrap:wrap}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MMORPG — Jugador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0c10;
+    --panel:#12141b;
+    --panel-2:#1a1d26;
+    --txt:#e6e6e6;
+    --muted:#9aa3b2;
+    --brand:#ff9d2d;
+    --brand-2:#ff4d5a;
+    --ok:#36d399;
+    --warn:#f6c945;
+    --danger:#ef4444;
+    --glow: 0 0 12px rgba(255,157,45,.35), 0 0 28px rgba(255,77,90,.15);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:"Rajdhani",system-ui,-apple-system,Segoe UI,Roboto;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(255,77,90,.20) 0, transparent 60%),
+      radial-gradient(900px 480px at -10% -10%, rgba(255,157,45,.18) 0, transparent 60%),
+      linear-gradient(180deg,#0a0b0f 0%, #0b0c10 100%);
+    color:var(--txt);
+  }
+  .wrap{max-width:1100px; margin:24px auto; padding:16px}
+  .hdr{
+    display:flex; align-items:center; gap:12px; margin-bottom:14px;
+  }
+  .badge{
+    font-weight:700; letter-spacing:.08em; font-size:14px;
+    color:#fff; padding:6px 10px; border:1px solid rgba(255,255,255,.08);
+    background:linear-gradient(90deg,rgba(255,157,45,.2),rgba(255,77,90,.2));
+    border-radius:10px; box-shadow:var(--glow)
+  }
+  h1{margin:.2rem 0 1rem; font-size:34px; letter-spacing:.02em}
+  .grid{display:grid; gap:16px}
+  @media(min-width:900px){ .grid{grid-template-columns: 380px 1fr} }
+
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,.03), transparent 30%) , var(--panel);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:16px; padding:16px; position:relative; overflow:hidden;
+  }
+  .card h2{margin:0 0 10px; font-size:20px}
+  .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .muted{color:var(--muted); font-size:13px}
+
+  .btn{
+    appearance:none; border:1px solid rgba(255,255,255,.12);
+    background:linear-gradient(180deg,#202432,#171a25);
+    color:#fff; padding:10px 14px; border-radius:10px; cursor:pointer;
+    font-weight:700; letter-spacing:.03em;
+    transition:transform .05s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+  .btn:hover{box-shadow:0 0 0 2px rgba(255,255,255,.05) inset, var(--glow)}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{
+    border-color: rgba(255,157,45,.4);
+    background:linear-gradient(180deg,#ff9d2d,#ff4d5a);
+    color:#111; text-shadow:0 1px 0 rgba(255,255,255,.35);
+  }
+  .btn.danger{
+    border-color:rgba(239,68,68,.4);
+    background:linear-gradient(180deg,#ef6666,#ef4444);
+    color:#111; text-shadow:0 1px 0 rgba(255,255,255,.35);
+  }
+  .input{
+    width:100%; background:var(--panel-2); color:#fff;
+    border:1px solid rgba(255,255,255,.08); border-radius:10px;
+    padding:10px 12px; outline:none;
+  }
+
+  /* Hero Panel */
+  .hero{
+    display:grid; grid-template-columns: 140px 1fr; gap:14px; align-items:center;
+  }
+  .avatar{
+    width:140px; height:140px; border-radius:20px;
+    background:
+      radial-gradient(40px 40px at 60% 30%, rgba(255,255,255,.1), transparent 60%),
+      radial-gradient(100px 100px at 50% 50%, rgba(255,77,90,.3), transparent 70%),
+      #101319;
+    border:1px solid rgba(255,255,255,.08);
+    position:relative; overflow:hidden; box-shadow:var(--glow)
+  }
+  .avatar::after{
+    content:""; position:absolute; inset:-2px; border-radius:18px;
+    background:conic-gradient(from 40deg, rgba(255,157,45,.25), rgba(255,77,90,.25), transparent 30%);
+    filter:blur(20px); opacity:.6;
+  }
+  .avatar svg{position:absolute; inset:0; width:100%; height:100%; opacity:.9}
+
+  .hero h3{margin:0 0 4px; font-size:22px}
+  .chips{display:flex; gap:6px; flex-wrap:wrap}
+  .chip{
+    font-size:12px; padding:4px 8px; border-radius:999px;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08);
+  }
+
+  /* XP Bar */
+  .bar{height:14px; background:#0f1320; border-radius:999px; border:1px solid rgba(255,255,255,.08); overflow:hidden}
+  .bar>span{
+    display:block; height:100%;
+    background:linear-gradient(90deg,#ff9d2d,#ff4d5a);
+    width:0%; transition:width .5s ease;
+    box-shadow:inset 0 0 15px rgba(0,0,0,.35)
+  }
+  .stat-row{display:grid; grid-template-columns:120px 1fr auto; gap:10px; align-items:center; margin:8px 0}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+
+  table{width:100%; border-collapse:collapse}
+  th,td{padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left}
+  th{color:#b9c2d0; font-weight:700}
+  .empty{padding:10px; color:var(--muted)}
+
+  .toast{
+    position:fixed; right:14px; bottom:14px; padding:10px 14px; border-radius:10px;
+    background:#111a; color:#fff; backdrop-filter: blur(6px);
+    border:1px solid rgba(255,255,255,.12); display:none;
+  }
+</style>
 </head>
 <body>
-  <h1>MMORPG – Jugador</h1>
-
-  <section class="card">
-    <div class="row row-2">
-      <div>
-        <label>Tu nombre</label>
-        <input id="name" placeholder="Jugador1" />
-      </div>
-      <div style="align-self:end" class="btnline">
-        <button id="saveName" class="ok">Guardar nombre</button>
-        <button id="clearName">Olvidar</button>
-      </div>
+  <div class="wrap">
+    <div class="hdr">
+      <span class="badge">MMORPG</span>
+      <h1 style="margin:0">Panel del Jugador</h1>
     </div>
-  </section>
 
-  <div class="row row-2">
-    <section class="card">
-      <h2>Tu progreso</h2>
-      <label>level</label><input id="level" type="number" value="1" />
-      <div class="btnline">
-        <button id="saveMe" class="ok">Guardar</button>
-        <button id="plus1">+1 XP</button>
-        <button id="plus10">+10 XP</button>
-      </div>
-    </section>
+    <div class="grid">
+      <!-- LADO IZQUIERDO: HÉROE / PERFIL -->
+      <section class="card">
+        <h2>Tu héroe</h2>
+        <div class="hero">
+          <div class="avatar" aria-hidden="true">
+            <!-- Silueta simple SVG (placeholder) -->
+            <svg viewBox="0 0 200 200">
+              <defs>
+                <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#ff9d2d"/><stop offset="1" stop-color="#ff4d5a"/>
+                </linearGradient>
+              </defs>
+              <circle cx="100" cy="58" r="30" fill="url(#g)" opacity=".85"/>
+              <rect x="85" y="86" width="30" height="60" rx="10" fill="url(#g)" opacity=".45"/>
+              <rect x="60" y="86" width="30" height="14" rx="6" fill="#ff9d2d66"/>
+              <rect x="110" y="86" width="30" height="14" rx="6" fill="#ff4d5a66"/>
+              <rect x="75" y="146" width="50" height="36" rx="8" fill="#ff9d2d22"/>
+            </svg>
+          </div>
+          <div>
+            <h3 id="pName">Jugador</h3>
+            <div class="chips">
+              <span class="chip">Clase: <span id="pClass" class="mono">Soldier</span></span>
+              <span class="chip">Nivel: <span id="pLevel" class="mono">1</span></span>
+              <span class="chip">XP: <span id="pXP" class="mono">0</span></span>
+            </div>
+            <div class="stat-row">
+              <div class="muted">Progreso XP</div>
+              <div class="bar"><span id="xpFill"></span></div>
+              <div class="mono" id="xpPct">0%</div>
+            </div>
+            <div class="row">
+              <button class="btn primary" id="btnGain">+50 XP</button>
+              <button class="btn" id="btnRefresh">Refrescar</button>
+            </div>
+          </div>
+        </div>
 
-    <section class="card">
-      <h2>Progreso global</h2>
-      <div class="btnline"><button id="viewGlobal">Ver</button></div>
-      <pre id="outGlobal">-</pre>
-    </section>
+        <div style="margin-top:14px">
+          <div class="muted" style="margin-bottom:6px">Tu nombre</div>
+          <div class="row">
+            <input class="input" id="nameInput" placeholder="Escribe tu nombre único…" />
+            <button class="btn" id="btnSaveName">Guardar</button>
+            <button class="btn" id="btnForget">Olvidar</button>
+          </div>
+          <div class="muted" style="margin-top:6px">
+            Se guarda localmente (no es login). Tu progreso se asocia por <b>name</b>.
+          </div>
+        </div>
+      </section>
+
+      <!-- LADO DERECHO: PROGRESO GLOBAL / QUESTS / TOP -->
+      <section class="card">
+        <h2>Progreso global</h2>
+        <div class="stat-row">
+          <div class="muted">Goal</div>
+          <div class="bar"><span id="worldFill"></span></div>
+          <div class="mono" id="worldPct">0%</div>
+        </div>
+        <div class="muted" id="worldMeta">current 0 / goal 0 · stage 0</div>
+
+        <hr style="border:none; border-top:1px solid rgba(255,255,255,.08); margin:14px -16px">
+
+        <h2>Misiones</h2>
+        <div id="quests" class="empty">Sin misiones aún.</div>
+
+        <hr style="border:none; border-top:1px solid rgba(255,255,255,.08); margin:14px -16px">
+
+        <h2>Leaderboard (Top 10 XP)</h2>
+        <div style="overflow:auto">
+          <table id="tbTop">
+            <thead><tr><th>#</th><th>Jugador</th><th>Nivel</th><th>XP</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   </div>
 
-  <section class="card">
-    <h2>Leaderboard (Top 10)</h2>
-    <div class="btnline"><button id="viewTop">Ver Top</button></div>
-    <pre id="outTop">-</pre>
-  </section>
+  <div class="toast" id="toast">listo</div>
 
 <script>
-const BASE = "";
+  const API = location.origin; // ← TU API (Cloud Run base)
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
 
-const nameEl = document.getElementById("name");
-const levelEl = document.getElementById("level");
-const outGlobal = document.getElementById("outGlobal");
-const outTop = document.getElementById("outTop");
+  const els = {
+    nameInput: $("#nameInput"),
+    pName: $("#pName"),
+    pClass: $("#pClass"),
+    pLevel: $("#pLevel"),
+    pXP: $("#pXP"),
+    xpFill: $("#xpFill"),
+    xpPct: $("#xpPct"),
+    worldFill: $("#worldFill"),
+    worldPct: $("#worldPct"),
+    worldMeta: $("#worldMeta"),
+    tbBody: $("#tbTop tbody"),
+    quests: $("#quests"),
+    toast: $("#toast"),
+    btnGain: $("#btnGain"),
+    btnRefresh: $("#btnRefresh"),
+    btnSaveName: $("#btnSaveName"),
+    btnForget: $("#btnForget"),
+  };
 
-const loadName = () => nameEl.value = localStorage.getItem("PLAYER_NAME") || "";
-const saveName = () => localStorage.setItem("PLAYER_NAME", nameEl.value.trim());
-document.getElementById("saveName").onclick = () => { saveName(); alert("Nombre guardado"); };
-document.getElementById("clearName").onclick = () => { localStorage.removeItem("PLAYER_NAME"); nameEl.value=""; };
+  function toast(msg){
+    els.toast.textContent = msg;
+    els.toast.style.display = "block";
+    clearTimeout(window.__t);
+    window.__t = setTimeout(()=> els.toast.style.display = "none", 1800);
+  }
 
-loadName();
+  // ====== Local player name ======
+  function getPlayerName(){ return localStorage.getItem("playerName") || ""; }
+  function setPlayerName(n){ localStorage.setItem("playerName", n); }
 
-document.getElementById("saveMe").onclick = async () => {
-  const n = nameEl.value.trim(); if(!n) return alert("Escribe tu nombre");
-  // Nota: esta ruta está protegida en admin; si quieres que los jugadores se autogestionen,
-  // podríamos abrir otro endpoint. Por ahora, solo lectura + sumar XP (lo maneja Admin).
-  alert("Por diseño, guardar nivel requiere Admin. Usa el panel Admin.");
-};
+  // ====== API helpers ======
+  async function jget(path){ const r = await fetch(API + path); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+  async function jput(path,body){ const r = await fetch(API + path,{method:"PUT", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(body)}); if(!r.ok) throw new Error(await r.text()); return r.json(); }
 
-document.getElementById("plus1").onclick = async () => {
-  alert("Sumar XP está protegido para Admin en este backend.");
-};
-document.getElementById("plus10").onclick = async () => {
-  alert("Sumar XP está protegido para Admin en este backend.");
-};
+  // ====== Render helpers ======
+  function setXPBar(cur, max=100){
+    const pct = Math.max(0, Math.min(100, Math.round((cur%max)/max*100)));
+    els.xpFill.style.width = pct + "%";
+    els.xpPct.textContent = pct + "%";
+  }
+  function setWorldBar(current, goal){
+    const pct = goal>0 ? Math.min(100, Math.round(current/goal*100)) : 0;
+    els.worldFill.style.width = pct + "%";
+    els.worldPct.textContent = pct + "%";
+    els.worldMeta.textContent = `current ${current} / goal ${goal} · stage ${window.__stage ?? 0}`;
+  }
 
-document.getElementById("viewGlobal").onclick = async () => {
-  const r = await fetch(`${BASE}/global`); outGlobal.textContent = JSON.stringify(await r.json(), null, 2);
-};
-document.getElementById("viewTop").onclick = async () => {
-  const r = await fetch(`${BASE}/leaderboard?limit=10`); outTop.textContent = JSON.stringify(await r.json(), null, 2);
-};
+  // ====== Data loads ======
+  async function loadPlayer(){
+    const name = getPlayerName();
+    els.nameInput.value = name;
+    els.pName.textContent = name || "Sin nombre";
+    if(!name) return;
+
+    try{
+      const p = await jget(`/players/${encodeURIComponent(name)}`);
+      els.pLevel.textContent = p.level ?? 1;
+      els.pXP.textContent = p.xp ?? 0;
+      setXPBar(p.xp ?? 0, 100); // 100 xp por nivel (ejemplo visual)
+    }catch(e){
+      // si no existe, lo creamos con defaults al primer +50 XP
+      els.pLevel.textContent = "1";
+      els.pXP.textContent = "0";
+      setXPBar(0,100);
+    }
+  }
+
+  async function loadWorld(){
+    try{
+      const g = await jget("/global");
+      window.__stage = g.stage ?? 0;
+      setWorldBar(g.current ?? 0, g.goal ?? 0);
+    }catch(e){ /* noop */ }
+  }
+
+  async function loadTop(){
+    try{
+      const list = await jget("/leaderboard");
+      const tb = els.tbBody; tb.innerHTML = "";
+      list.forEach((it,i)=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${i+1}</td><td>${it.name||it.id}</td><td>${it.level??"-"}</td><td class="mono">${it.xp??0}</td>`;
+        tb.appendChild(tr);
+      });
+    }catch(e){
+      els.tbBody.innerHTML = `<tr><td colspan="4" class="empty">No disponible</td></tr>`;
+    }
+  }
+
+  async function loadQuests(){
+    try{
+      const list = await jget("/quests");
+      if(!list.length){ els.quests.innerHTML = `<div class="empty">Sin misiones.</div>`; return; }
+      const frag = document.createDocumentFragment();
+      list.forEach(q=>{
+        const row = document.createElement("div");
+        row.className = "row";
+        row.style.justifyContent = "space-between";
+        row.style.border = "1px solid rgba(255,255,255,.08)";
+        row.style.borderRadius = "10px";
+        row.style.padding = "8px 10px";
+        row.style.margin = "8px 0";
+        row.innerHTML = `
+          <div>
+            <div><b>${q.title||"Misión"}</b> <span class="chip">${q.status||"open"}</span></div>
+            <div class="muted mono">${q.id||""}</div>
+          </div>
+          <div class="row">
+            <button class="btn" data-id="${q.id}" data-act="done">Completar</button>
+          </div>
+        `;
+        frag.appendChild(row);
+      });
+      els.quests.innerHTML = "";
+      els.quests.appendChild(frag);
+
+      els.quests.querySelectorAll("button[data-act='done']").forEach(b=>{
+        b.onclick = ()=>{
+          b.textContent = "¡Completada!";
+          b.classList.add("primary");
+          toast("Marcada como completada (UI)");
+          // Si luego quieres guardar al jugador, aquí haríamos un PATCH /quests/:id por jugador
+        };
+      });
+    }catch(e){
+      els.quests.innerHTML = `<div class="empty">No disponible.</div>`;
+    }
+  }
+
+  // ====== Actions ======
+  els.btnGain.onclick = async ()=>{
+    const name = getPlayerName();
+    if(!name){ toast("Guarda tu nombre primero"); return; }
+    const currXP = Number(els.pXP.textContent||0) + 50;
+    const level = Number(els.pLevel.textContent||1);
+    try{
+      const updated = await jput(`/players/${encodeURIComponent(name)}`, { xp: currXP, level });
+      els.pXP.textContent = updated.xp ?? currXP;
+      els.pLevel.textContent = updated.level ?? level;
+      setXPBar(updated.xp ?? currXP, 100);
+      toast("+50 XP");
+      loadTop();
+    }catch(e){ toast("Error al sumar XP"); }
+  };
+
+  els.btnRefresh.onclick = ()=>{ loadPlayer(); loadWorld(); loadTop(); loadQuests(); };
+  els.btnSaveName.onclick = ()=>{
+    const n = (els.nameInput.value||"").trim();
+    if(!n){ toast("Escribe un nombre"); return; }
+    setPlayerName(n);
+    toast("Nombre guardado");
+    loadPlayer();
+  };
+  els.btnForget.onclick = ()=>{
+    localStorage.removeItem("playerName");
+    els.nameInput.value = ""; els.pName.textContent = "Sin nombre";
+    toast("Nombre olvidado");
+  };
+
+  // ====== Boot ======
+  (async function init(){
+    const n = getPlayerName();
+    if(n) els.nameInput.value = n;
+    await Promise.all([loadPlayer(), loadWorld(), loadTop(), loadQuests()]);
+  })();
 </script>
 </body>
 </html>

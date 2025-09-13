@@ -1,0 +1,101 @@
+<!-- public/game.html – Panel público para jugadores -->
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MMORPG – Jugador</title>
+  <style>
+    :root { --bg:#0b0d10; --fg:#f4f6fb; --card:#151821; --muted:#a9b2c0; --ok:#43d17a; }
+    *{box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+    body{margin:0;background:var(--bg);color:var(--fg);padding:16px}
+    h1{margin:0 0 10px}
+    .card{background:var(--card);padding:14px;border-radius:12px;margin:12px 0}
+    label{font-size:12px;color:var(--muted);display:block;margin:6px 0 4px}
+    input{width:100%;padding:10px;border:1px solid #293243;background:#0d0f14;color:var(--fg);border-radius:8px}
+    button{border:0;padding:10px 14px;border-radius:10px;background:#273142;color:#fff;cursor:pointer}
+    .ok{background:var(--ok);color:#000;font-weight:700}
+    .row{display:grid;grid-template-columns:1fr;gap:10px}
+    @media(min-width:900px){ .row-2{grid-template-columns:1fr 1fr} }
+    pre{background:#000;color:#3cff71;padding:12px;border-radius:10px;overflow:auto}
+    .btnline{display:flex;gap:8px;flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <h1>MMORPG – Jugador</h1>
+
+  <section class="card">
+    <div class="row row-2">
+      <div>
+        <label>Tu nombre</label>
+        <input id="name" placeholder="Jugador1" />
+      </div>
+      <div style="align-self:end" class="btnline">
+        <button id="saveName" class="ok">Guardar nombre</button>
+        <button id="clearName">Olvidar</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="row row-2">
+    <section class="card">
+      <h2>Tu progreso</h2>
+      <label>level</label><input id="level" type="number" value="1" />
+      <div class="btnline">
+        <button id="saveMe" class="ok">Guardar</button>
+        <button id="plus1">+1 XP</button>
+        <button id="plus10">+10 XP</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Progreso global</h2>
+      <div class="btnline"><button id="viewGlobal">Ver</button></div>
+      <pre id="outGlobal">-</pre>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Leaderboard (Top 10)</h2>
+    <div class="btnline"><button id="viewTop">Ver Top</button></div>
+    <pre id="outTop">-</pre>
+  </section>
+
+<script>
+const BASE = "";
+
+const nameEl = document.getElementById("name");
+const levelEl = document.getElementById("level");
+const outGlobal = document.getElementById("outGlobal");
+const outTop = document.getElementById("outTop");
+
+const loadName = () => nameEl.value = localStorage.getItem("PLAYER_NAME") || "";
+const saveName = () => localStorage.setItem("PLAYER_NAME", nameEl.value.trim());
+document.getElementById("saveName").onclick = () => { saveName(); alert("Nombre guardado"); };
+document.getElementById("clearName").onclick = () => { localStorage.removeItem("PLAYER_NAME"); nameEl.value=""; };
+
+loadName();
+
+document.getElementById("saveMe").onclick = async () => {
+  const n = nameEl.value.trim(); if(!n) return alert("Escribe tu nombre");
+  // Nota: esta ruta está protegida en admin; si quieres que los jugadores se autogestionen,
+  // podríamos abrir otro endpoint. Por ahora, solo lectura + sumar XP (lo maneja Admin).
+  alert("Por diseño, guardar nivel requiere Admin. Usa el panel Admin.");
+};
+
+document.getElementById("plus1").onclick = async () => {
+  alert("Sumar XP está protegido para Admin en este backend.");
+};
+document.getElementById("plus10").onclick = async () => {
+  alert("Sumar XP está protegido para Admin en este backend.");
+};
+
+document.getElementById("viewGlobal").onclick = async () => {
+  const r = await fetch(`${BASE}/global`); outGlobal.textContent = JSON.stringify(await r.json(), null, 2);
+};
+document.getElementById("viewTop").onclick = async () => {
+  const r = await fetch(`${BASE}/leaderboard?limit=10`); outTop.textContent = JSON.stringify(await r.json(), null, 2);
+};
+</script>
+</body>
+</html>

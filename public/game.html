@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>MMORPG — Jugador</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
@@ -10,6 +10,7 @@
   :root{
     --bg:#0b0c10; --panel:#12141b; --panel2:#1a1d26; --txt:#e6e6e6; --muted:#9aa3b2;
     --brand1:#ff9d2d; --brand2:#ff4d5a; --ok:#36d399; --danger:#ef4444;
+    --radius:16px;
   }
   *{box-sizing:border-box} html,body{height:100%}
   body{
@@ -20,65 +21,69 @@
       linear-gradient(180deg,#0a0b0f 0%, #0b0c10 100%);
     color:var(--txt);
   }
-  .wrap{max-width:1200px; margin:24px auto; padding:16px}
-  .hdr{display:flex; align-items:center; gap:12px; margin-bottom:14px}
-  .badge{font-weight:700; font-size:14px; letter-spacing:.08em; color:#fff; padding:6px 10px;
+  .wrap{max-width:1100px; margin:0 auto; padding: clamp(12px, 2vw, 24px)}
+  .hdr{display:flex; align-items:center; gap:12px; margin-bottom: clamp(8px,1.8vw,14px)}
+  .badge{font-weight:700; font-size:12px; letter-spacing:.08em; color:#fff; padding:6px 10px;
     border:1px solid rgba(255,255,255,.08);
     background:linear-gradient(90deg,rgba(255,157,45,.2),rgba(255,77,90,.2));
-    border-radius:10px; box-shadow:0 0 12px rgba(255,157,45,.35), 0 0 28px rgba(255,77,90,.15)}
-  h1{margin:.2rem 0 1rem; font-size:34px; letter-spacing:.02em}
-  .grid{display:grid; gap:16px}
-  @media(min-width:980px){ .grid{grid-template-columns: 460px 1fr} }
+    border-radius:10px}
+  h1{margin:.2rem 0 1rem; font-size: clamp(20px, 3.6vw, 34px); letter-spacing:.02em}
+
+  /* LAYOUT GRID */
+  .grid{display:grid; gap: clamp(10px, 2vw, 16px)}
+  @media (min-width: 980px){ .grid{grid-template-columns: 460px 1fr} }
 
   .card{
     background:linear-gradient(180deg, rgba(255,255,255,.03), transparent 30%) , var(--panel);
-    border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:16px; position:relative;
+    border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); padding: clamp(12px, 2vw, 16px);
   }
-  .card h2{margin:0 0 10px; font-size:20px}
+  .card h2{margin:0 0 10px; font-size: clamp(16px,2.4vw,20px)}
   .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-  .muted{color:var(--muted); font-size:13px}
+  .muted{color:var(--muted); font-size: clamp(12px,2.6vw,13px)}
   .btn{
     appearance:none; border:1px solid rgba(255,255,255,.12);
     background:linear-gradient(180deg,#202432,#171a25); color:#fff;
-    padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700; letter-spacing:.03em;
+    padding:12px 14px; border-radius:12px; cursor:pointer; font-weight:700; letter-spacing:.03em;
     transition:transform .05s ease, box-shadow .2s ease, border-color .2s ease;
+    min-height:44px; /* touch target */
   }
-  .btn:hover{box-shadow:0 0 0 2px rgba(255,255,255,.05) inset, 0 0 14px rgba(255,157,45,.35)}
   .btn:active{transform:translateY(1px)}
   .btn.primary{
     border-color: rgba(255,157,45,.4);
     background:linear-gradient(180deg,#ff9d2d,#ff4d5a); color:#111; text-shadow:0 1px 0 rgba(255,255,255,.35);
   }
   .btn.danger{border-color:rgba(239,68,68,.5); background:linear-gradient(180deg,#ef6666,#ef4444); color:#111}
-  .input{width:100%; background:var(--panel2); color:#fff; border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:10px 12px}
+  .btn.ghost{background:transparent; border-color:rgba(255,255,255,.12)}
+  .btn.block{width:100%}
+  .input{width:100%; background:var(--panel2); color:#fff; border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:12px 12px; min-height:44px}
 
   /* HERO */
   .hero{display:grid; grid-template-columns: 160px 1fr; gap:16px; align-items:center}
-  .avatar{width:160px; height:160px; border-radius:20px; background:#101319; border:1px solid rgba(255,255,255,.08); position:relative; overflow:hidden}
-  .avatar::after{content:""; position:absolute; inset:-2px; border-radius:18px; background:conic-gradient(from 40deg, rgba(255,157,45,.25), rgba(255,77,90,.25), transparent 30%); filter:blur(20px); opacity:.6}
+  @media (max-width: 680px){ .hero{grid-template-columns: 1fr; text-align:left} }
+  .avatar{width:160px; height:160px; border-radius:20px; background:#101319; border:1px solid rgba(255,255,255,.08); position:relative; overflow:hidden; margin-inline:auto}
   .avatar svg{position:absolute; inset:0; width:100%; height:100%; opacity:.9}
   .chips{display:flex; gap:6px; flex-wrap:wrap}
   .chip{font-size:12px; padding:4px 8px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08)}
-  .stat-row{display:grid; grid-template-columns:120px 1fr auto; gap:10px; align-items:center; margin:8px 0}
+  .statGrid{display:grid; grid-template-columns: 110px 1fr 40px; gap:8px; margin-top:8px}
+  @media (max-width: 420px){ .statGrid{grid-template-columns: 80px 1fr 36px} }
+  .statName{color:#cfd6e6}
   .bar{height:14px; background:#0f1320; border-radius:999px; border:1px solid rgba(255,255,255,.08); overflow:hidden}
   .bar>span{display:block; height:100%; background:linear-gradient(90deg,#ff9d2d,#ff4d5a); width:0%; transition:width .5s ease}
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 
   /* CLASS/skins */
-  .tabs{display:flex; gap:8px; margin:8px 0 6px}
-  .tab{padding:8px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.1); cursor:pointer; user-select:none}
+  .tabs{display:flex; gap:8px; margin:8px 0 6px; overflow:auto; -webkit-overflow-scrolling:touch; scrollbar-width:thin}
+  .tab{padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.1); cursor:pointer; user-select:none; white-space:nowrap}
   .tab.active{border-color:#ff9d2d; box-shadow:0 0 0 1px rgba(255,157,45,.3) inset}
-  .skins{display:flex; gap:8px; overflow:auto; padding-bottom:6px}
+  .skins{display:flex; gap:8px; overflow:auto; padding-bottom:6px; -webkit-overflow-scrolling:touch; scrollbar-width:thin}
   .skin{
-    min-width:90px; height:110px; border-radius:12px; border:1px solid rgba(255,255,255,.08);
-    background:#121826; position:relative; cursor:pointer;
+    min-width:100px; height:120px; border-radius:12px; border:1px solid rgba(255,255,255,.08);
+    background:#121826; position:relative; cursor:pointer; flex: 0 0 auto;
   }
   .skin.active{outline:2px solid #ff9d2d}
   .skin .t{position:absolute; left:6px; bottom:6px; font-size:12px; background:#0007; padding:2px 6px; border-radius:8px}
-  .statGrid{display:grid; grid-template-columns: 110px 1fr 40px; gap:8px; margin-top:8px}
-  .statName{color:#cfd6e6}
   .divider{border:none; border-top:1px solid rgba(255,255,255,.08); margin:14px -16px}
-  table{width:100%; border-collapse:collapse} th,td{padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left} th{color:#b9c2d0}
+  table{width:100%; border-collapse:collapse} th,td{padding:10px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left} th{color:#b9c2d0; font-size:14px}
   .empty{padding:10px; color:var(--muted)}
   .toast{position:fixed; right:14px; bottom:14px; padding:10px 14px; border-radius:10px; background:#111a; color:#fff; backdrop-filter: blur(6px); border:1px solid rgba(255,255,255,.12); display:none}
 </style>
@@ -97,7 +102,6 @@
 
         <div class="hero" style="margin-top:8px">
           <div class="avatar" id="avatar">
-            <!-- placeholder avatar -->
             <svg viewBox="0 0 200 200">
               <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9d2d"/><stop offset="1" stop-color="#ff4d5a"/></linearGradient></defs>
               <circle cx="100" cy="58" r="30" fill="url(#g)" opacity=".85"/>
@@ -108,7 +112,7 @@
             </svg>
           </div>
           <div>
-            <h3 id="pName">Jugador</h3>
+            <h3 id="pName" style="margin:.2rem 0">Jugador</h3>
             <div class="chips">
               <span class="chip">Clase: <span id="pClass" class="mono">Soldier</span></span>
               <span class="chip">Skin: <span id="pSkin" class="mono">Base</span></span>
@@ -140,16 +144,19 @@
       <!-- DERECHA -->
       <section class="card">
         <h2>Progreso global</h2>
-        <div class="stat-row">
+        <div class="row" style="align-items:center">
           <div class="muted">Goal</div>
-          <div class="bar"><span id="worldFill"></span></div>
+          <div class="bar" style="flex:1"><span id="worldFill"></span></div>
           <div class="mono" id="worldPct">0%</div>
         </div>
-        <div class="muted" id="worldMeta">current 0 / goal 0 · stage 0</div>
+        <div class="muted" id="worldMeta" style="margin-top:6px">current 0 / goal 0 · stage 0</div>
 
         <hr class="divider">
 
-        <h2>Misiones</h2>
+        <div class="row" style="justify-content:space-between">
+          <h2 style="margin:0">Misiones</h2>
+          <button class="btn ghost" id="btnReloadQuests">Recargar</button>
+        </div>
         <div id="quests" class="empty">Sin misiones aún.</div>
 
         <hr class="divider">
@@ -160,13 +167,16 @@
         </div>
       </section>
     </div>
+
+    <!-- En móviles: botones más anchos por defecto -->
+    <style>@media (max-width:680px){ .btn{flex:1} .row>.btn:first-child,.row>.input{flex:1 1 100%} }</style>
   </div>
 
   <div class="toast" id="toast">listo</div>
 
 <script>
 /* ======================= CONFIG LOCAL DEL FRONT ======================= */
-const API = location.origin; // Base de tu API
+const API = location.origin;
 
 // Clases y skins con stats (0–100)
 const CLASSES = {
@@ -209,7 +219,7 @@ const els = {
   tbBody: $("#tbTop tbody"), quests: $("#quests"),
   toast: $("#toast"),
   btnEquip: $("#btnEquip"), btnGain: $("#btnGain"), btnRefresh: $("#btnRefresh"),
-  btnSaveName: $("#btnSaveName"), btnForget: $("#btnForget")
+  btnSaveName: $("#btnSaveName"), btnForget: $("#btnForget"), btnReloadQuests: $("#btnReloadQuests")
 };
 
 function toast(msg){ els.toast.textContent = msg; els.toast.style.display="block"; clearTimeout(window.__t); window.__t=setTimeout(()=>els.toast.style.display="none",1600); }
@@ -218,6 +228,7 @@ function setPlayerName(n){ localStorage.setItem("playerName", n); }
 
 async function jget(p){ const r=await fetch(API+p); if(!r.ok) throw new Error(await r.text()); return r.json(); }
 async function jput(p,b){ const r=await fetch(API+p,{method:"PUT", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(b)}); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+async function jpatch(p,b){ const r=await fetch(API+p,{method:"PATCH", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(b)}); if(!r.ok) throw new Error(await r.text()); return r.json(); }
 
 function barRow(label, val){
   const wrap = document.createElement("div"); wrap.className="statGrid";
@@ -226,7 +237,6 @@ function barRow(label, val){
   const v = document.createElement("div"); v.className="mono"; v.textContent = val;
   wrap.append(nm,bar,v); return wrap;
 }
-
 function renderStats(stats){
   els.statGrid.innerHTML = "";
   for(const k of ["Durable","Nuker","Disabler","Difficulty"]){
@@ -237,15 +247,8 @@ function renderStats(stats){
 /* ===================== ESTADO SELECCIÓN (CLASE/SKIN) ================== */
 let currentClass = "Soldier";
 let currentSkinId = "base";
-
-function saveSelectionLocal(){
-  localStorage.setItem("selClass", currentClass);
-  localStorage.setItem("selSkin", currentSkinId);
-}
-function loadSelectionLocal(){
-  currentClass = localStorage.getItem("selClass") || "Soldier";
-  currentSkinId = localStorage.getItem("selSkin") || "base";
-}
+function saveSelectionLocal(){ localStorage.setItem("selClass", currentClass); localStorage.setItem("selSkin", currentSkinId); }
+function loadSelectionLocal(){ currentClass = localStorage.getItem("selClass") || "Soldier"; currentSkinId = localStorage.getItem("selSkin") || "base"; }
 
 /* ============================ RENDER UI ================================= */
 function renderTabs(){
@@ -275,7 +278,6 @@ function renderHeroHeader(){
   els.pClass.textContent = currentClass;
   els.pSkin.textContent  = skin.name;
   renderStats(skin.stats);
-  // Color al avatar
   const svg = document.querySelector("#avatar svg");
   svg.querySelector("linearGradient stop[offset='0']").setAttribute("stop-color", skin.color1);
   svg.querySelector("linearGradient stop[offset='1']").setAttribute("stop-color", skin.color2);
@@ -288,27 +290,60 @@ function setWorldBar(current, goal){
   els.worldPct.textContent = pct + "%";
   els.worldMeta.textContent = `current ${current} / goal ${goal} · stage ${window.__stage ?? 0}`;
 }
-
 async function loadWorld(){ try{ const g = await jget("/global"); window.__stage=g.stage??0; setWorldBar(g.current??0, g.goal??0);}catch{} }
 async function loadTop(){ try{ const list = await jget("/leaderboard"); const tb=els.tbBody; tb.innerHTML=""; list.forEach((it,i)=>{ const tr=document.createElement("tr"); tr.innerHTML=`<td>${i+1}</td><td>${it.name||it.id}</td><td>${it.level??"-"}</td><td class="mono">${it.xp??0}</td>`; tb.appendChild(tr);}); }catch{ els.tbBody.innerHTML=`<tr><td colspan="4" class="empty">No disponible</td></tr>`; } }
-async function loadQuests(){ try{ const list=await jget("/quests"); if(!list.length){ els.quests.innerHTML=`<div class="empty">Sin misiones.</div>`; return; } const frag=document.createDocumentFragment(); list.forEach(q=>{ const row=document.createElement("div"); row.className="row"; row.style.justifyContent="space-between"; row.style.border="1px solid rgba(255,255,255,.08)"; row.style.borderRadius="10px"; row.style.padding="8px 10px"; row.style.margin="8px 0"; row.innerHTML=`<div><div><b>${q.title||"Misión"}</b> <span class="chip">${q.status||"open"}</span></div><div class="muted mono">${q.id||""}</div></div><div class="row"><button class="btn" data-id="${q.id}">Completar</button></div>`; frag.appendChild(row); }); els.quests.innerHTML=""; els.quests.appendChild(frag); els.quests.querySelectorAll("button").forEach(b=> b.onclick=()=>{ b.textContent="¡Completada!"; b.classList.add("primary"); toast("Marcada como completada (UI)"); }); }catch{ els.quests.innerHTML=`<div class="empty">No disponible.</div>`; } }
 
+/* === Misiones: PATCH /quests/:id {status:"done"} === */
+async function loadQuests(){
+  try{
+    const list=await jget("/quests");
+    if(!list.length){ els.quests.innerHTML=`<div class="empty">Sin misiones.</div>`; return; }
+    const frag=document.createDocumentFragment();
+    list.forEach(q=>{
+      const row=document.createElement("div");
+      row.className="row";
+      row.style.justifyContent="space-between";
+      row.style.border="1px solid rgba(255,255,255,.08)";
+      row.style.borderRadius="10px";
+      row.style.padding="8px 10px";
+      row.style.margin="8px 0";
+      row.innerHTML=`
+        <div style="min-width:0">
+          <div style="font-weight:700">${q.title||"Misión"}</div>
+          <div class="muted mono" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60vw">${q.id||""}</div>
+        </div>
+        <div class="row" style="flex:0 0 auto">
+          <span class="chip" style="margin-right:6px">${q.status||"open"}</span>
+          <button class="btn ${q.status==='done'?'primary':''}" data-id="${q.id}" ${q.status==='done'?'disabled':''}>
+            ${q.status==='done'?'Completada':'Completar'}
+          </button>
+        </div>`;
+      frag.appendChild(row);
+    });
+    els.quests.innerHTML=""; els.quests.appendChild(frag);
+    els.quests.querySelectorAll("button[data-id]").forEach(b=>{
+      b.onclick = async ()=>{
+        const id=b.getAttribute("data-id");
+        try{ await jpatch(`/quests/${encodeURIComponent(id)}`, { status:"done" }); toast("Misión completada"); loadQuests(); }
+        catch{ toast("Error al completar"); }
+      };
+    });
+  }catch{ els.quests.innerHTML=`<div class="empty">No disponible.</div>`; }
+}
+
+/* ======================= Jugador (carga/acciones) ======================= */
 async function loadPlayer(){
   const name = getPlayerName();
   els.nameInput.value = name; els.pName.textContent = name || "Sin nombre";
   if(!name) return;
-
   try{
     const p = await jget(`/players/${encodeURIComponent(name)}`);
     els.pLevel.textContent = p.level ?? 1; els.pXP.textContent = p.xp ?? 0;
-    // si hay clase/skin en BD, úsalo
-    if(p.class && CLASSES[p.class]){ currentClass = p.class; }
-    if(p.skin){ currentSkinId = p.skin; }
+    if(p.class && CLASSES[p.class]) currentClass = p.class;
+    if(p.skin) currentSkinId = p.skin;
     saveSelectionLocal();
     renderAllClassSkin();
-  }catch{
-    // todavía no existe; se creará al equipar/ganar XP
-  }
+  }catch{}
 }
 
 /* =============================== ACCIONES ================================ */
@@ -329,18 +364,15 @@ els.btnEquip.onclick = async ()=>{
   const name = getPlayerName(); if(!name){ toast("Guarda tu nombre primero"); return; }
   const skin = CLASSES[currentClass].skins.find(s=>s.id===currentSkinId);
   const payload = { class: currentClass, skin: skin.id, stats: skin.stats };
-  try{
-    await jput(`/players/${encodeURIComponent(name)}`, payload);
-    toast(`Equipado: ${currentClass} / ${skin.name}`);
-  }catch{ toast("Error al equipar"); }
+  try{ await jput(`/players/${encodeURIComponent(name)}`, payload); toast(`Equipado: ${currentClass} / ${skin.name}`); }
+  catch{ toast("Error al equipar"); }
 };
 
 els.btnRefresh.onclick = ()=>{ loadPlayer(); loadWorld(); loadTop(); loadQuests(); };
+els.btnReloadQuests.onclick = ()=> loadQuests();
 
 /* ============================== RENDER CORE ============================== */
-function renderAllClassSkin(){
-  renderTabs(); renderSkins(); renderHeroHeader();
-}
+function renderAllClassSkin(){ renderTabs(); renderSkins(); renderHeroHeader(); }
 
 /* ================================= INIT ================================= */
 (async function init(){

@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sembrar enemigos</title>
+  <style>
+    body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:#0b0e13;color:#eaeef5}
+    .wrap{max-width:720px;margin:0 auto;padding:20px}
+    .card{background:#151924;border:1px solid #22293a;border-radius:14px;padding:16px;margin:14px 0}
+    input,button{width:100%;padding:12px;border-radius:10px;border:1px solid #22293a;background:#0f131a;color:#eaeef5}
+    button{background:linear-gradient(90deg,#ff7846,#ff4f4f);border:none;font-weight:600}
+    pre{background:#0f131a;border:1px solid #22293a;border-radius:10px;padding:12px;overflow:auto}
+    small{color:#8ea0bd}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Sembrar enemigos</h1>
+
+    <div class="card">
+      <p><small>Si ya guardaste tu clave en <b>/admin</b>, la toma de <code>localStorage</code>. Si no, escríbela aquí:</small></p>
+      <input id="sec" placeholder="Admin secret (opcional si ya lo guardaste en /admin)" />
+      <br><br>
+      <button onclick="seed()">Sembrar enemigos</button>
+    </div>
+
+    <div class="card">
+      <h3>Salida</h3>
+      <pre id="out">-</pre>
+    </div>
+  </div>
+
+<script>
+const out = x => document.getElementById('out').textContent =
+  typeof x === 'string' ? x : JSON.stringify(x,null,2);
+
+async function seed(){
+  // toma la clave del input o de localStorage (la que guardas en /admin)
+  const sec = (document.getElementById('sec').value.trim())
+           || (localStorage.getItem('admin_secret') || "");
+  if(!sec){ alert("Escribe tu admin secret o guárdalo primero en /admin"); return; }
+
+  try{
+    const r = await fetch("/seed/enemies", {
+      method: "POST",
+      headers: { "x-admin-secret": sec }
+    });
+    const data = await r.json().catch(async ()=>({ raw: await r.text() }));
+    out(data);
+  }catch(e){
+    out({ error: String(e) });
+  }
+}
+</script>
+</body>
+</html>

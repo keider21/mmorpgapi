@@ -1,0 +1,231 @@
+<!-- public/signup.html -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Registro — MMORPG</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0b0f;
+    --ink:#e9e7e4;
+    --muted:#b7b2ad;
+    --gold:#c8a35f;
+    --gold-2:#9b7b3f;
+    --danger:#e35d6a;
+    --ok:#46d08f;
+    --card:#11131a;
+    --line:#272b36;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:
+      radial-gradient(60% 80% at 50% -10%, #1a1d26 0%, #0a0b0f 60%),
+      url('https://images.unsplash.com/photo-1495069781661-dfeacdef0531?q=80&w=1920&auto=format&fit=crop') center/cover fixed;
+    color:var(--ink); font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .frame{
+    width:min(980px,100%);
+    background:linear-gradient(180deg,#0e1016aa,#0e1016aa), var(--card);
+    border:1px solid #1f2230; border-radius:18px; padding:28px 24px 22px;
+    box-shadow:0 20px 60px #0008;
+  }
+  .brand{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
+  .brand h1{
+    font: 600 36px/1.1 Cinzel,serif; letter-spacing:.02em; margin:0;
+    text-transform:uppercase;
+  }
+  .region{display:flex; gap:10px; align-items:center}
+  .region select{
+    background:#0c0e13; color:var(--ink); border:1px solid var(--line);
+    padding:10px 12px; border-radius:10px;
+  }
+
+  .title{
+    text-align:center; margin:18px 0 22px;
+    font: 600 24px Cinzel,serif; letter-spacing:.06em;
+  }
+  .subtitle{ text-align:center; color:var(--muted); margin:-10px 0 22px }
+  .form{
+    display:grid; gap:14px; width:min(680px,100%); margin:0 auto;
+  }
+
+  label{font-size:12px; color:var(--muted); letter-spacing:.05em}
+  .field{
+    background:#0b0d12; border:1px solid var(--line); border-radius:12px;
+    padding:12px 14px; color:var(--ink); width:100%;
+    outline:none; transition:border .2s, box-shadow .2s;
+  }
+  .field:focus{ border-color:#3d4357; box-shadow:0 0 0 2px #3d435733 }
+
+  .row{ display:grid; grid-template-columns:1fr 1fr; gap:14px }
+  @media (max-width:720px){ .row{ grid-template-columns:1fr } }
+
+  .checks{ display:grid; gap:10px; margin-top:8px; color:var(--muted); font-size:14px }
+  .checks input{ accent-color:var(--gold) }
+
+  .btn{
+    background:linear-gradient(180deg, var(--gold), var(--gold-2));
+    color:#0b0b0b; border:0; border-radius:12px; padding:14px 18px;
+    font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    cursor:pointer; transition:transform .05s ease, filter .2s;
+  }
+  .btn:active{ transform:translateY(1px) }
+  .btn[disabled]{ filter:grayscale(.8) brightness(.7); cursor:not-allowed }
+
+  .error{ color:var(--danger); min-height:18px; font-size:13px }
+  .foot{
+    margin-top:14px; display:flex; justify-content:space-between; align-items:center;
+    color:var(--muted); font-size:12px
+  }
+  .toast{
+    position:fixed; left:50%; bottom:22px; transform:translateX(-50%);
+    background:#0c1016; border:1px solid #243043; color:var(--ink);
+    padding:10px 14px; border-radius:10px; display:none;
+  }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div class="brand">
+      <h1>Forja tu Cuenta</h1>
+      <div class="region">
+        <span>Región</span>
+        <select id="region">
+          <option value="us-central">US Central (ES)</option>
+          <option value="eu-west">EU Oeste (ES)</option>
+          <option value="sa-east">SA Este (ES)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="title">Crea tu nombre de usuario y contraseña</div>
+    <div class="subtitle">Después podrás elegir tu nombre visible en el juego</div>
+
+    <form id="form" class="form" autocomplete="off">
+      <div>
+        <label>Nombre de usuario</label>
+        <input id="user" class="field" placeholder="Ej: Rediekdarr" maxlength="24" required>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Contraseña</label>
+          <input id="pass" type="password" class="field" placeholder="••••••••" minlength="8" required>
+        </div>
+        <div>
+          <label>Confirmar contraseña</label>
+          <input id="pass2" type="password" class="field" placeholder="••••••••" minlength="8" required>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Nivel inicial (opcional)</label>
+          <input id="level" type="number" class="field" value="1" min="1" max="99">
+        </div>
+        <div>
+          <label>Correo (opcional)</label>
+          <input id="email" type="email" class="field" placeholder="nombre@dominio.com">
+        </div>
+      </div>
+
+      <div class="checks">
+        <label><input type="checkbox" id="tos"> Acepto los <a href="#" target="_blank">Términos de servicio</a> y la <a href="#" target="_blank">Política de privacidad</a>.</label>
+        <label><input type="checkbox" id="news"> Quiero recibir noticias ocasionales por correo.</label>
+      </div>
+
+      <div class="error" id="err"></div>
+      <button class="btn" id="submit" disabled>Siguiente</button>
+    </form>
+
+    <div class="foot">
+      <span>Paso 3 de 3</span>
+      <a href="legal.html" style="color:var(--muted)">Legal</a>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  // ====== Config ======
+  const BASE = ""; // mismo host (Cloud Run). No pongas URL absoluta.
+  const MIN_LEN = 8;
+
+  // ====== UI ======
+  const $ = (id)=>document.getElementById(id);
+  const user=$("user"), pass=$("pass"), pass2=$("pass2");
+  const level=$("level"), tos=$("tos"), submit=$("submit"), err=$("err");
+  const toast=$("toast");
+
+  function showToast(msg){
+    toast.textContent=msg; toast.style.display="block";
+    setTimeout(()=>toast.style.display="none", 2600);
+  }
+
+  function validate(){
+    err.textContent="";
+    let ok = true;
+
+    const u = user.value.trim();
+    if (!/^[a-zA-Z0-9_]{3,24}$/.test(u)){
+      err.textContent = "El usuario debe tener 3–24 caracteres (letras, números o _).";
+      ok=false;
+    } else if (pass.value.length < MIN_LEN){
+      err.textContent = `La contraseña debe tener al menos ${MIN_LEN} caracteres.`;
+      ok=false;
+    } else if (pass.value !== pass2.value){
+      err.textContent = "Las contraseñas no coinciden.";
+      ok=false;
+    } else if (!tos.checked){
+      err.textContent = "Debes aceptar los Términos.";
+      ok=false;
+    }
+    submit.disabled = !ok;
+    return ok;
+  }
+
+  ["input","change"].forEach(ev=>{
+    user.addEventListener(ev,validate);
+    pass.addEventListener(ev,validate);
+    pass2.addEventListener(ev,validate);
+    tos.addEventListener(ev,validate);
+  });
+
+  // ====== Registro (usa tu endpoint público ya creado) ======
+  document.getElementById("form").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    if(!validate()) return;
+
+    const name = user.value.trim();
+    const lvl  = Math.max(1, Number(level.value||1));
+
+    // Guardar local: nombre (la contraseña NO se guarda aquí)
+    localStorage.setItem("PLAYER_NAME", name);
+
+    try{
+      // 1) Registrar/asegurar jugador
+      const r = await fetch(`${BASE}/public/register`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ name, level: lvl })
+      });
+      const j = await r.json();
+      if(!r.ok){ err.textContent = j.error || "Error registrando."; return; }
+
+      // 2) (Opcional) aquí podrías llamar a /auth/signup si más adelante creas auth real.
+      //    NO guardes contraseñas en Firestore sin hash/pepper/argon2.
+
+      showToast("¡Cuenta lista! Redirigiendo…");
+      setTimeout(()=> location.href = "game.html", 900);
+    }catch(e){
+      err.textContent = "Fallo de red. Intenta de nuevo.";
+    }
+  });
+</script>
+</body>
+</html>

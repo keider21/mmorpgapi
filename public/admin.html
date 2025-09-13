@@ -1,54 +1,180 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Panel Admin MMORPG</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MMORPG Admin</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;margin:20px}
+    h1{margin-bottom:12px}
+    fieldset{border:1px solid #ddd;border-radius:8px;padding:14px;margin-bottom:16px}
+    legend{padding:0 6px;font-weight:600}
+    label{display:block;font-size:12px;color:#555;margin-top:8px}
+    input{width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:6px}
+    .row{display:flex;gap:8px;margin:8px 0}
+    .row > *{flex:1}
+    button{padding:8px 12px;border:0;border-radius:8px;background:#111;color:#fff}
+    button.secondary{background:#777}
+    pre{background:#000;color:#0f0;padding:10px;border-radius:8px;min-height:32px;overflow:auto}
+  </style>
 </head>
 <body>
-  <h1>🌍 Panel de Administración</h1>
+  <h1>MMORPG Admin</h1>
 
-  <button onclick="loadWorld()">Cargar Mundo</button>
-  <pre id="output"></pre>
+  <fieldset>
+    <legend>Progreso global</legend>
+    <div class="row">
+      <button id="btnView">Ver progreso</button>
+      <button id="btnPlus5" class="secondary">+5</button>
+      <button id="btnPlus100" class="secondary">+100</button>
+    </div>
 
-  <h2>Incrementar Progreso</h2>
-  <form onsubmit="sendProgress(event)">
-    <label>ID del jugador:</label>
-    <input type="text" id="playerId" value="jugador1" required /><br />
+    <label>current</label>
+    <input id="inpCurrent" type="number" inputmode="numeric" />
 
-    <label>Nombre del jugador:</label>
-    <input type="text" id="name" value="Jugador1" required /><br />
+    <label>goal</label>
+    <input id="inpGoal" type="number" inputmode="numeric" />
 
-    <label>Cantidad a sumar:</label>
-    <input type="number" id="amount" value="1" /><br />
+    <label>stage</label>
+    <input id="inpStage" type="number" inputmode="numeric" />
 
-    <button type="submit">Enviar</button>
-  </form>
+    <div class="row">
+      <button id="btnSave">Guardar</button>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Jugadores</legend>
+    <div class="row">
+      <button id="btnList">Listar</button>
+    </div>
+
+    <label>name (único)</label>
+    <input id="inpName" type="text" />
+
+    <label>level</label>
+    <input id="inpLevel" type="number" inputmode="numeric" />
+
+    <div class="row">
+      <button id="btnUpsert">Crear/Actualizar</button>
+    </div>
+  </fieldset>
+
+  <h3>Salida</h3>
+  <pre id="out">-</pre>
 
   <script>
-    const API_BASE = "https://3500480.us-central1.run.app"; // ← tu URL
+    // Base de la API: mismo host (Cloud Run) donde sirve este admin.html
+    const API = "";
 
-    async function loadWorld() {
-      const res = await fetch(API_BASE + "/world");
-      const data = await res.json();
-      document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+    const $ = (id) => document.getElementById(id);
+    const out = $("out");
+    const show = (obj) => out.textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+
+    async function getGlobal() {
+      const r = await fetch(`${API}/global`);
+      if (!r.ok) throw new Error(`GET /global -> ${r.status}`);
+      return r.json();
     }
 
-    async function sendProgress(event) {
-      event.preventDefault();
-      const playerId = document.getElementById("playerId").value;
-      const name = document.getElementById("name").value;
-      const amount = parseInt(document.getElementById("amount").value);
-
-      const res = await fetch(API_BASE + "/world/progress/increment", {
-        method: "POST",
+    async function patchGlobal(payload) {
+      const r = await fetch(`${API}/global`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerId, name, amount })
+        body: JSON.stringify(payload)
+      });
+      if (!r.ok) throw new Error(`PATCH /global -> ${r.status}`);
+      return r.json();
+    }
+
+    async function listPlayers() {
+      const r = await fetch(`${API}/players`);
+      if (!r.ok) throw new Error(`GET /players -> ${r.status}`);
+      return r.json();
+    }
+
+    async function upsertPlayer(name, data) {
+      const r = await fetch(`${API}/players/${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      if (!r.ok) throw new Error(`PUT /players/${name} -> ${r.status}`);
+      return r.json();
+    }
+
+    function readGlobalInputs() {
+      const current = parseInt($("inpCurrent").value || "0", 10);
+      const goal    = parseInt($("inpGoal").value || "0", 10);
+      const stage   = parseInt($("inpStage").value || "0", 10);
+      return { current, goal, stage };
+    }
+
+    function fillGlobalInputs(data) {
+      $("inpCurrent").value = data.current ?? 0;
+      $("inpGoal").value    = data.goal ?? 0;
+      $("inpStage").value   = data.stage ?? 0;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      $("btnView").addEventListener("click", async () => {
+        try {
+          const g = await getGlobal();
+          fillGlobalInputs(g);
+          show(g);
+        } catch (e) { show(String(e)); }
       });
 
-      const data = await res.json();
-      alert("Respuesta: " + JSON.stringify(data));
-      loadWorld();
-    }
+      $("btnPlus5").addEventListener("click", async () => {
+        try {
+          let { current, goal, stage } = readGlobalInputs();
+          if (!Number.isFinite(current)) {
+            const g = await getGlobal();
+            ({ current, goal, stage } = g);
+          }
+          const res = await patchGlobal({ current: current + 5, goal, stage });
+          fillGlobalInputs(res);
+          show(res);
+        } catch (e) { show(String(e)); }
+      });
+
+      $("btnPlus100").addEventListener("click", async () => {
+        try {
+          let { current, goal, stage } = readGlobalInputs();
+          if (!Number.isFinite(current)) {
+            const g = await getGlobal();
+            ({ current, goal, stage } = g);
+          }
+          const res = await patchGlobal({ current: current + 100, goal, stage });
+          fillGlobalInputs(res);
+          show(res);
+        } catch (e) { show(String(e)); }
+      });
+
+      $("btnSave").addEventListener("click", async () => {
+        try {
+          const payload = readGlobalInputs();
+          const res = await patchGlobal(payload);
+          fillGlobalInputs(res);
+          show(res);
+        } catch (e) { show(String(e)); }
+      });
+
+      $("btnList").addEventListener("click", async () => {
+        try { show(await listPlayers()); }
+        catch (e) { show(String(e)); }
+      });
+
+      $("btnUpsert").addEventListener("click", async () => {
+        try {
+          const name = $("inpName").value.trim();
+          const level = parseInt($("inpLevel").value || "0", 10);
+          if (!name) return show("Pon un nombre de jugador");
+          const res = await upsertPlayer(name, { level });
+          show(res);
+        } catch (e) { show(String(e)); }
+      });
+    });
   </script>
 </body>
 </html>

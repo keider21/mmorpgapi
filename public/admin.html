@@ -1,182 +1,187 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MMORPG Admin</title>
-<style>
-  :root { color-scheme: light dark; }
-  body { font-family: system-ui, Arial, sans-serif; margin:16px; }
-  h1 { margin: 8px 0 16px; }
-  .card { border: 1px solid #8884; border-radius: 12px; padding: 12px; margin-bottom: 16px; }
-  .row { display: grid; grid-template-columns: 1fr; gap: 8px; }
-  @media (min-width:600px){ .row-3 { grid-template-columns: repeat(3,1fr); } .row-2{grid-template-columns: repeat(2,1fr);} }
-  button { padding:10px; border-radius:10px; border:0; background:#111; color:#fff; font-weight:600; }
-  input, textarea { padding:10px; border:1px solid #8886; border-radius:10px; width:100%; box-sizing:border-box; }
-  .muted { font-size: 12px; opacity:.8; }
-  .stack { display:flex; gap:8px; flex-wrap:wrap; }
-  .warn { color:#c00; font-weight:700; }
-  pre { background:#000; color:#0f0; padding:10px; border-radius:10px; overflow:auto; min-height:54px; }
-  label { font-size: 12px; opacity:.8; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MMORPG Admin</title>
+  <style>
+    :root { --bg:#0f0f0f; --card:#1a1a1a; --text:#fff; --muted:#bbb; --btn:#111; --btnAccent:#222; --ok:#0f0; --err:#f66; }
+    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    .wrap{max-width:900px;margin:24px auto;padding:0 12px}
+    h1{margin:0 0 16px 0}
+    .card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 0 0 1px #000 inset}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .row>*{flex:1 1 160px}
+    button{background:#000;border:1px solid #333;color:#fff;border-radius:10px;padding:10px 14px;font-size:16px;cursor:pointer}
+    button.primary{background:#111}
+    button.accent{background:#222}
+    button.danger{background:#400}
+    input{width:100%;padding:10px;border-radius:10px;border:1px solid #333;background:#0c0c0c;color:#fff;font-size:16px}
+    .label{font-size:12px;color:var(--muted);margin:8px 0 4px}
+    pre#out{background:#000;color:#9f9;border-radius:12px;padding:12px;min-height:56px;white-space:pre-wrap}
+  </style>
 </head>
 <body>
+<div class="wrap">
   <h1>MMORPG Admin</h1>
 
-  <!-- ACCESO -->
+  <!-- Clave -->
   <div class="card">
-    <div class="row row-2">
-      <div>
-        <label>Admin secret</label>
-        <input id="secret" type="password" placeholder="Escribe tu clave…" />
-      </div>
-      <div class="stack" style="align-items:end">
-        <button id="btnSaveSecret">Guardar clave</button>
-        <button id="btnClearSecret">Olvidar clave</button>
-      </div>
+    <div class="label">Admin secret</div>
+    <input id="secret" type="password" placeholder="Escribe tu clave de admin" />
+    <div class="row" style="margin-top:10px">
+      <button type="button" id="btnSaveKey" class="primary">Guardar clave</button>
+      <button type="button" id="btnForgetKey" class="accent">Olvidar clave</button>
     </div>
-    <div class="muted">La clave se envía en el header <code>x-admin-secret</code> y se guarda localmente (localStorage).</div>
+    <div class="label">La clave se envía en el header <code>x-admin-secret</code> y se guarda localmente.</div>
   </div>
 
-  <!-- PROGRESO GLOBAL -->
+  <!-- Progreso global -->
   <div class="card">
-    <h2>Progreso global</h2>
-    <div class="stack">
-      <button id="btnViewGlobal">Ver progreso</button>
-      <button id="btnPlus5">+5</button>
-      <button id="btnPlus100">+100</button>
-    </div>
+    <h2 style="margin-top:0">Progreso global</h2>
     <div class="row">
-      <div>
-        <label>current</label>
-        <input id="g_current" type="number" value="0" />
-      </div>
-      <div>
-        <label>goal</label>
-        <input id="g_goal" type="number" value="10000" />
-      </div>
-      <div>
-        <label>stage</label>
-        <input id="g_stage" type="number" value="0" />
-      </div>
+      <button type="button" id="btnGet"  class="primary">Ver progreso</button>
+      <button type="button" id="btnPlus5"  class="accent">+5</button>
+      <button type="button" id="btnPlus100" class="accent">+100</button>
     </div>
-    <div style="margin-top:8px">
-      <button id="btnSaveGlobal" style="width:100%">Guardar</button>
+
+    <div class="label">current</div><input id="g_current" type="number" value="0" />
+    <div class="label">goal</div>   <input id="g_goal"    type="number" value="10000" />
+    <div class="label">stage</div>  <input id="g_stage"   type="number" value="0" />
+    <div style="margin-top:10px">
+      <button type="button" id="btnSaveGlobal" class="primary" style="width:100%">Guardar</button>
     </div>
   </div>
 
-  <!-- JUGADORES -->
+  <!-- Jugadores -->
   <div class="card">
-    <h2>Jugadores</h2>
-    <div class="stack">
-      <button id="btnList">Listar</button>
-      <button id="btnTop">Top 10 (XP)</button>
-    </div>
+    <h2 style="margin-top:0">Jugadores</h2>
     <div class="row">
-      <div>
-        <label>name (único)</label>
-        <input id="p_name" placeholder="Jugador1" />
-      </div>
-      <div>
-        <label>level</label>
-        <input id="p_level" type="number" value="1" />
-      </div>
-      <div>
-        <label>xp (opcional)</label>
-        <input id="p_xp" type="number" value="0" />
-      </div>
+      <button type="button" id="btnList" class="primary">Listar</button>
+      <button type="button" id="btnTop"  class="accent">Top 10 (XP)</button>
     </div>
-    <div class="stack" style="margin-top:8px">
-      <button id="btnUpsert">Crear/Actualizar</button>
-      <button id="btnAdd50">+50 XP</button>
-      <button id="btnDelete" style="background:#700">Borrar jugador</button>
+
+    <div class="label">name (único)</div><input id="p_name"  placeholder="Jugador1" />
+    <div class="label">level</div>        <input id="p_level" type="number" value="1" />
+    <div class="label">xp (opcional)</div><input id="p_xp"    type="number" value="0" />
+
+    <div class="row" style="margin-top:10px">
+      <button type="button" id="btnUpsert" class="primary">Crear/Actualizar</button>
+      <button type="button" id="btnAddXp"  class="accent">+50 XP</button>
+      <button type="button" id="btnDel"    class="danger">Borrar jugador</button>
     </div>
   </div>
 
-  <!-- SALIDA -->
+  <!-- Salida -->
   <div class="card">
-    <h2>Salida</h2>
-    <pre id="out">-</pre>
+    <h2 style="margin:0 0 8px 0">Salida</h2>
+    <pre id="out">—</pre>
   </div>
+</div>
 
 <script>
-  // ========= CONFIG =========
-  const BASE = "https://3500480.us-central1.run.app"; // TU URL
-  const $ = (id) => document.getElementById(id);
-  const out = $("out");
+  // ===== util =====
+  const $ = s => document.querySelector(s);
+  const out = $('#out');
+  const SECRET_KEY = 'admin_secret';
 
-  // Persistir/leer secret
-  function loadSecret(){
-    const s = localStorage.getItem("admin_secret") || "";
-    $("secret").value = s;
-    return s;
-  }
-  function saveSecret(){
-    localStorage.setItem("admin_secret", $("secret").value);
-    log("✔ Secret guardado localmente");
-  }
-  function clearSecret(){
-    localStorage.removeItem("admin_secret");
-    $("secret").value = "";
-    log("✔ Secret borrado de este dispositivo");
-  }
-
-  function headers(json=true){
-    const h = {};
-    if(json) h["Content-Type"] = "application/json";
-    const s = $("secret").value.trim();
-    if(s) h["x-admin-secret"] = s;
-    return h;
-  }
-  function log(obj){ out.textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2); }
-
-  // ========= GLOBAL =========
-  async function viewGlobal(){
+  function log(obj, isErr=false){
     try{
-      const r = await fetch(`${BASE}/global`, { headers: headers(false) });
-      const data = await r.json();
-      $("g_current").value = data.current ?? 0;
-      $("g_goal").value    = data.goal ?? 10000;
-      $("g_stage").value   = data.stage ?? 0;
-      log(data);
-    }catch(e){ log({error:String(e)}) }
+      out.style.color = isErr ? '#f99' : '#9f9';
+      out.textContent = (typeof obj === 'string') ? obj : JSON.stringify(obj, null, 2);
+    }catch(e){ out.textContent = String(obj); }
+  }
+  function getSecret(){ return localStorage.getItem(SECRET_KEY) || ''; }
+  function setSecret(v){ localStorage.setItem(SECRET_KEY, v||''); }
+
+  // Mostrar secreto guardado
+  $('#secret').value = getSecret();
+
+  async function api(path, options={}){
+    const headers = options.headers || {};
+    const sec = getSecret();
+    if (sec) headers['x-admin-secret'] = sec;
+    headers['Content-Type'] = 'application/json';
+    const res = await fetch(path, { credentials:'same-origin', ...options, headers });
+    let data = null;
+    const txt = await res.text();
+    try { data = txt ? JSON.parse(txt) : null; } catch { data = { raw: txt }; }
+    if (!res.ok) throw Object.assign(new Error('HTTP '+res.status), {status:res.status, data});
+    return data ?? {};
   }
 
-  async function saveGlobal(delta=0){
-    try{
-      const current = Number($("g_current").value)||0;
-      const goal    = Number($("g_goal").value)||0;
-      const stage   = Number($("g_stage").value)||0;
-      const body = { current: current + delta, goal, stage };
+  // ===== botones clave =====
+  $('#btnSaveKey').onclick   = () => { setSecret($('#secret').value.trim()); log('Clave guardada'); };
+  $('#btnForgetKey').onclick = () => { setSecret(''); $('#secret').value=''; log('Clave borrada'); };
 
-      const r = await fetch(`${BASE}/global`, {
-        method: "PATCH",
-        headers: headers(),
-        body: JSON.stringify(body)
+  // ===== global =====
+  $('#btnGet').onclick = async () => {
+    try {
+      const g = await api('/global');
+      $('#g_current').value = g.current ?? 0;
+      $('#g_goal').value    = g.goal ?? 10000;
+      $('#g_stage').value   = g.stage ?? 0;
+      log(g);
+    } catch(e){ log(e.data || e.message, true); }
+  };
+
+  $('#btnPlus5').onclick = () => { $('#g_current').value = (+$('#g_current').value||0) + 5; };
+  $('#btnPlus100').onclick = () => { $('#g_current').value = (+$('#g_current').value||0) + 100; };
+
+  $('#btnSaveGlobal').onclick = async () => {
+    try{
+      const body = {
+        current: +$('#g_current').value||0,
+        goal:    +$('#g_goal').value||0,
+        stage:   +$('#g_stage').value||0
+      };
+      const r = await api('/global', { method:'PATCH', body: JSON.stringify(body) });
+      log(r);
+    }catch(e){ log(e.data || e.message, true); }
+  };
+
+  // ===== players =====
+  $('#btnList').onclick = async () => {
+    try { log(await api('/players?limit=25')); }
+    catch(e){ log(e.data || e.message, true); }
+  };
+
+  $('#btnTop').onclick = async () => {
+    try { log(await api('/leaderboard?limit=10')); }
+    catch(e){ log(e.data || e.message, true); }
+  };
+
+  $('#btnUpsert').onclick = async () => {
+    const name  = $('#p_name').value.trim();
+    const level = +$('#p_level').value||1;
+    const xp    = +$('#p_xp').value||0;
+    if (!name) return log('name requerido', true);
+    try {
+      const r = await api('/players/'+encodeURIComponent(name), {
+        method:'PUT',
+        body: JSON.stringify({ level, xp })
       });
-      log(await r.json());
-      if(delta!==0) await viewGlobal();
-    }catch(e){ log({error:String(e)}) }
-  }
+      log(r);
+    } catch(e){ log(e.data || e.message, true); }
+  };
 
-  // ========= PLAYERS =========
-  async function listPlayers(){
-    try{
-      const r = await fetch(`${BASE}/players?limit=50`, { headers: headers(false) });
-      log(await r.json());
-    }catch(e){ log({error:String(e)}) }
-  }
+  $('#btnAddXp').onclick = async () => {
+    const name = $('#p_name').value.trim();
+    if (!name) return log('name requerido', true);
+    try {
+      const r = await api('/players/addxp', { method:'POST', body: JSON.stringify({ name, xp:50 }) });
+      log(r);
+    } catch(e){ log(e.data || e.message, true); }
+  };
 
-  async function topXP(){
-    try{
-      const r = await fetch(`${BASE}/leaderboard?limit=10`, { headers: headers(false) });
-      log(await r.json());
-    }catch(e){ log({error:String(e)}) }
-  }
-
-  async function upsertPlayer(){
-    try{
-      const name  = $("p_name").value.trim();
-      if(!name) return log({error:"name requerido"});
-      const level = Number($("p_level").value)||1;
-      const xp    = Number($
+  $('#btnDel').onclick = async () => {
+    const name = $('#p_name').value.trim();
+    if (!name) return log('name requerido', true);
+    try {
+      const r = await api('/players/delete', { method:'POST', body: JSON.stringify({ name }) });
+      log(r);
+    } catch(e){ log(e.data || e.message, true); }
+  };
+</script>
+</body>
+</html>

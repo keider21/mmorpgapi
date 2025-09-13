@@ -1,115 +1,115 @@
-  // index.js
+// index.js
 import express from "express";
 import cors from "cors";
-import { Firestore, FieldValue } from "@google-cloud/firestore";
+import { Firestore } from "@google-cloud/firestore";
 
-// ──────────────────────────────
-// Config básica
-// ──────────────────────────────
 const app = express();
-const db = new Firestore();
-const PORT = process.env.PORT || 8080;
-
 app.use(cors({ origin: true }));
 app.use(express.json());
 
-// Sirve archivos estáticos (admin.html, etc.) desde /public
+// servir archivos estáticos (admin.html) desde /public
 app.use(express.static("public"));
 
-// ──────────────────────────────
-/**
- * Estructura de Firestore esperada:
- * world_progress (COL)
- *   └── global (DOC)  ->  { current: number, goal: number, stage: number }
- *        └── world_progress (SUBCOL de jugadores)
- *             └── {playerId} (DOC) -> { name: string, level: number }
- */
-// ──────────────────────────────
+const db = new Firestore();
+const PORT = process.env.PORT || 8080;
+
+// nombres de colecciones/doc
 const ROOT_COLLECTION = "world_progress";
 const GLOBAL_DOC_ID = "global";
-const PLAYERS_SUBCOLL = "world_progress";
+const PLAYERS_SUBCOLL = "world_progress"; // subcolección dentro del doc global
 
-// Helpers
-const globalRef = () => db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID);
-const playersRef = () => globalRef().collection(PLAYERS_SUBCOLL);
-
-// ──────────────────────────────
-// Rutas
-// ──────────────────────────────
-
-// Salud/estado
+// Home: muestra endpoints
 app.get("/", (_req, res) => {
   res.json({
     service: "mmorpgapi",
+    endpoints: ["/global (GET|PATCH)", "/players (GET)", "/players/:name (PUT)"],
     time: new Date().toISOString(),
-    endpoints: ["/world", "/world/progress/increment (POST)"]
   });
 });
 
-// Devuelve el estado global + lista de jugadores
-app.get("/world", async (_req, res) => {
+/* --------- GLOBAL PROGRESS ---------- */
+
+// GET /global -> lee current/goal/stage
+app.get("/global", async (_req, res) => {
   try {
-    const [globalSnap, playersSnap] = await Promise.all([
-      globalRef().get(),
-      playersRef().get()
-    ]);
-
-    const globalData = globalSnap.exists ? globalSnap.data() : null;
-    const players = playersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-    res.json({ global: globalData, players });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error leyendo Firestore", details: err.message });
-  }
-});
-
-// Incrementa el progreso global y actualiza el jugador
-// Body esperado: { playerId: "abc123", name: "Jugador1", amount: 1 }
-app.post("/world/progress/increment", async (req, res) => {
-  try {
-    const { playerId, name, amount } = req.body || {};
-    const inc = Number(amount ?? 1);
-    if (!playerId || !name) {
-      return res.status(400).json({ error: "Faltan 'playerId' y/o 'name'" });
-    }
-    if (!Number.isFinite(inc)) {
-      return res.status(400).json({ error: "'amount' debe ser numérico" });
-    }
-
-    // Transacción: incrementa global.current y sube nivel del jugador
-    const result = await db.runTransaction(async (tx) => {
-      // Global
-      const gRef = globalRef();
-      const gSnap = await tx.get(gRef);
-      if (!gSnap.exists) {
-        // inicializa si no existe
-        tx.set(gRef, { current: 0, goal: 10000, stage: 0 }, { merge: true });
-      }
-      tx.update(gRef, { current: FieldValue.increment(inc) });
-
-      // Player
-      const pRef = playersRef().doc(playerId);
-      const pSnap = await tx.get(pRef);
-      if (!pSnap.exists) {
-        tx.set(pRef, { name, level: 1 }, { merge: true });
-      } else {
-        tx.update(pRef, { level: FieldValue.increment(inc) });
-      }
-
-      return { ok: true };
+    const snap = await db
+      .collection(ROOT_COLLECTION)
+      .doc(GLOBAL_DOC_ID)
+      .get();
+    const data = snap.exists ? snap.data() : { current: 0, goal: 0, stage: 0 };
+    res.json({
+      current: Number(data.current || 0),
+      goal: Number(data.goal || 0),
+      stage: Number(data.stage || 0),
     });
-
-    res.json({ ok: true, result });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error actualizando progreso", details: err.message });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "failed_get_global" });
   }
 });
 
-// ──────────────────────────────
-// Arrancar servidor
-// ──────────────────────────────
+// PATCH /global  {current?, goal?, stage?}
+app.patch("/global", async (req, res) => {
+  try {
+    const { current, goal, stage } = req.body || {};
+    const payload = {};
+    if (Number.isFinite(current)) payload.current = Number(current);
+    if (Number.isFinite(goal)) payload.goal = Number(goal);
+    if (Number.isFinite(stage)) payload.stage = Number(stage);
+
+    await db
+      .collection(ROOT_COLLECTION)
+      .doc(GLOBAL_DOC_ID)
+      .set(payload, { merge: true });
+
+    const snap = await db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).get();
+    res.json(snap.data() || {});
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "failed_patch_global" });
+  }
+});
+
+/* --------- PLAYERS ---------- */
+
+// GET /players -> lista jugadores (name, level)
+app.get("/players", async (_req, res) => {
+  try {
+    const col = db
+      .collection(ROOT_COLLECTION)
+      .doc(GLOBAL_DOC_ID)
+      .collection(PLAYERS_SUBCOLL);
+    const qs = await col.get();
+    const items = qs.docs.map((d) => ({ id: d.id, ...(d.data() || {}) }));
+    res.json(items);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "failed_list_players" });
+  }
+});
+
+// PUT /players/:name  { level }
+app.put("/players/:name", async (req, res) => {
+  try {
+    const name = String(req.params.name || "").trim();
+    const level = Number(req.body?.level ?? 0);
+    if (!name) return res.status(400).json({ error: "name_required" });
+
+    const ref = db
+      .collection(ROOT_COLLECTION)
+      .doc(GLOBAL_DOC_ID)
+      .collection(PLAYERS_SUBCOLL)
+      .doc(name);
+
+    await ref.set({ name, level: Number.isFinite(level) ? level : 0 }, { merge: true });
+    const snap = await ref.get();
+    res.json(snap.data() || { name, level: 0 });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "failed_upsert_player" });
+  }
+});
+
 app.listen(PORT, () => {
-  console.log(`Servidor escuchando en puerto ${PORT}`);
+  console.log(`mmorpgapi listening on ${PORT}`);
 });

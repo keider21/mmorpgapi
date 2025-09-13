@@ -1,189 +1,319 @@
 <!doctype html>
-<html>
+<html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Panel del Jugador</title>
-  <style>
-    :root{--bg:#0b0e13;--card:#151924;--muted:#8ea0bd;--accent:#ff7846;--text:#eaeef5;--line:#22293a}
-    *{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#0b0e13,#0b0e13 60%,#0d1016)}
-    .wrap{max-width:920px;margin:0 auto;padding:20px}
-    h1{color:#fff;margin:18px 0 10px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0;color:var(--text)}
-    label{display:block;margin:8px 0 6px;color:var(--muted);font-size:14px}
-    input,select,button{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0f131a;color:var(--text)}
-    .row{display:flex;gap:10px;flex-wrap:wrap}
-    .row>*{flex:1 1 160px}
-    .cta{background:linear-gradient(90deg,#ff7846,#ff4f4f);border:none;color:#fff;font-weight:600}
-    .muted{color:var(--muted);font-size:13px}
-    .bar{height:8px;background:#0f131a;border-radius:6px;overflow:hidden;margin-top:8px}
-    .bar>i{display:block;height:100%;background:#2f81f7;width:0%}
-    table{width:100%;border-collapse:collapse;margin-top:10px}
-    th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left}
-    pre{background:#0f131a;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto}
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Panel del Jugador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0f1115; --card:#171a21; --muted:#b7c0d0; --acc:#ff7143; --line:#232735; --ok:#3ddc97; --warn:#ffcb2b; --bad:#ff4d4f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 700px at 50% -200px,#1b2230 0%,#0f1115 60%),var(--bg);color:#e6e9ef;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}
+  .wrap{max-width:960px;margin:24px auto;padding:0 14px}
+  h1{font-size:28px;margin:6px 0 16px;font-weight:800}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .row > *{flex:1 1 260px}
+  label{display:block;font-size:13px;color:var(--muted);margin:6px 0}
+  input,select{width:100%;background:#0f131b;border:1px solid var(--line);color:#e6e9ef;border-radius:10px;padding:12px 12px;font-size:16px}
+  .btn{display:inline-block;border:none;border-radius:10px;padding:12px 16px;font-weight:700;font-size:15px;cursor:pointer;transition:.2s}
+  .btn-primary{background:linear-gradient(90deg,#ff7b45,#ff4d4f);color:#fff}
+  .btn-ghost{background:#0f131b;border:1px solid var(--line);color:#e6e9ef}
+  .btn-ok{background:#1d3f33;color:#7ff0c6;border:1px solid #2d6f5a}
+  .btn-warn{background:#342b0f;color:#ffcb2b;border:1px solid #5a4b17}
+  .grid{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+  .list{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .rowi{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border-top:1px solid var(--line);padding:10px}
+  .rowi:first-child{border-top:none}
+  .muted{color:var(--muted);font-size:13px}
+  pre{background:#0b0e14;border-radius:12px;padding:12px;overflow:auto;border:1px solid var(--line)}
+  .tag{display:inline-block;background:#0f131b;border:1px solid var(--line);padding:4px 8px;border-radius:100px;font-size:12px;color:#cbd5e1;margin-right:6px}
+  .equip{border:1px dashed var(--line);padding:10px;border-radius:12px}
+  .drop{background:#14211b;border:1px solid #234635;color:#9cefcb;padding:8px 10px;border-radius:10px;margin:6px 0;font-size:14px}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Panel del Jugador</h1>
+<div class="wrap">
+  <h1>Panel del Jugador</h1>
 
-    <div class="card">
-      <label>Tu nombre</label>
-      <input id="name" placeholder="Tu nombre" />
-      <div class="row" style="margin-top:10px">
-        <button class="cta" onclick="saveName()">Guardar nombre</button>
-        <button onclick="forgetName()">Olvidar</button>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <div class="muted">Nivel <b id="lvl">1</b></div>
-        <div class="muted">XP <b id="xpText">0/100</b></div>
-      </div>
-      <div class="bar"><i id="xpBar"></i></div>
-    </div>
-
-    <div class="card">
-      <h3 style="margin:0 0 6px">Progreso global</h3>
-      <div class="bar"><i id="globalBar"></i></div>
-      <div class="muted" id="globalText">0% (current 0 / goal 10000, stage 1)</div>
-    </div>
-
-    <div class="card">
-      <h3 style="margin:0 0 10px">Batallas</h3>
-      <label>Enemigo</label>
-      <select id="enemy"></select>
-      <div class="row" style="margin-top:10px">
-        <button class="cta" onclick="attack()">¡Atacar!</button>
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Tu nombre</label>
+        <input id="iName" placeholder="Jugador1">
       </div>
     </div>
-
-    <div class="card">
-      <h3 style="margin:0 0 6px">Leaderboard (Top 10 XP)</h3>
-      <button onclick="loadTop()">Ver Top</button>
-      <table id="lb">
-        <thead><tr><th>#</th><th>Jugador</th><th>Nivel</th><th>XP</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <h3 style="margin:0 0 6px">Salida</h3>
-      <pre id="out">-</pre>
+    <div class="row">
+      <button class="btn btn-primary" onclick="saveName()">Guardar nombre</button>
+      <button class="btn btn-ghost" onclick="forgetName()">Olvidar</button>
+      <span class="tag" id="tLevel">Nivel 1</span>
+      <span class="tag" id="tXP">XP 0/100</span>
     </div>
   </div>
 
+  <div class="card">
+    <h3 style="margin-top:0">Progreso global</h3>
+    <div class="muted" id="tGlobal">-</div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Batallas</h3>
+    <div class="row">
+      <div>
+        <label>Enemigo</label>
+        <select id="selEnemy"></select>
+      </div>
+      <div style="align-self:end">
+        <button class="btn btn-primary" onclick="attack()">¡Atacar!</button>
+      </div>
+    </div>
+    <div id="drops"></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Equipamiento</h3>
+    <div class="grid">
+      <div class="equip"><b>Arma:</b> <span id="eqWeapon">-</span></div>
+      <div>
+        <button class="btn btn-ghost" onclick="unequip('weapon')">Quitar</button>
+      </div>
+      <div class="equip"><b>Armadura:</b> <span id="eqArmor">-</span></div>
+      <div>
+        <button class="btn btn-ghost" onclick="unequip('armor')">Quitar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Inventario</h3>
+    <div id="invList" class="list"></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Leaderboard (Top 10 XP)</h3>
+    <button class="btn btn-ghost" onclick="loadTop()">Ver Top</button>
+    <pre id="outTop">-</pre>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Salida</h3>
+    <pre id="out">-</pre>
+  </div>
+</div>
+
 <script>
-const out = x => document.getElementById('out').textContent =
-  typeof x === 'string' ? x : JSON.stringify(x,null,2);
-const base = location.origin;
+const BASE = location.origin;
+const out = (o) => document.getElementById("out").textContent =
+  typeof o === "string" ? o : JSON.stringify(o, null, 2);
 
-const getName = () => localStorage.getItem('player_name') || '';
-const setName = v => localStorage.setItem('player_name', v);
+const nameInput = document.getElementById("iName");
+const tLevel = document.getElementById("tLevel");
+const tXP = document.getElementById("tXP");
+const tGlobal = document.getElementById("tGlobal");
+const selEnemy = document.getElementById("selEnemy");
+const dropsBox = document.getElementById("drops");
+const invList = document.getElementById("invList");
+const outTop = document.getElementById("outTop");
+const eqWeapon = document.getElementById("eqWeapon");
+const eqArmor  = document.getElementById("eqArmor");
 
-document.getElementById('name').value = getName();
-
-function paintXP(level,xp){
-  const bar = document.getElementById('xpBar');
-  const cap = 100;
-  const pct = Math.min(100, Math.round((xp % cap) / cap * 100));
-  document.getElementById('lvl').textContent = level;
-  document.getElementById('xpText').textContent = `${xp%cap}/${cap}`;
-  bar.style.width = pct+'%';
+function saveName(){
+  localStorage.setItem("playerName", nameInput.value.trim());
+  alert("Nombre guardado");
+  refreshAll();
 }
-
-async function saveName(){
-  const n = document.getElementById('name').value.trim();
-  if(!n) return alert('Escribe tu nombre');
-  setName(n);
-  // crea/actualiza mínimo al guardar nombre
-  await fetch(`${base}/players/${encodeURIComponent(n)}`,{
-    method:'PUT', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ level:1, xp:0 })
-  });
-  alert('Nombre guardado');
-  await refreshSelf();
-  await loadTop();
-}
-
 function forgetName(){
-  localStorage.removeItem('player_name');
-  document.getElementById('name').value='';
-  paintXP(1,0);
-  out('-');
+  localStorage.removeItem("playerName");
+  nameInput.value = "";
+  refreshAll();
+}
+function getName(){
+  return localStorage.getItem("playerName") || nameInput.value.trim();
 }
 
-async function refreshGlobal(){
-  const r = await fetch(`${base}/global`);
-  const g = await r.json();
-  const pct = g.goal>0 ? Math.round((g.current/g.goal)*100) : 0;
-  document.getElementById('globalBar').style.width = pct+'%';
-  document.getElementById('globalText').textContent =
-    `${pct}% (current ${g.current} / goal ${g.goal}, stage ${g.stage})`;
+async function api(url, opts){
+  const r = await fetch(url, opts);
+  if (!r.ok) throw await r.json().catch(()=>({error:"http_"+r.status}));
+  return r.json();
 }
 
-async function refreshSelf(){
-  const n = getName();
-  if(!n) return;
-  const r = await fetch(`${base}/players/${encodeURIComponent(n)}`);
-  if(r.ok){
-    const p = await r.json();
-    paintXP(p.level||1, p.xp||0);
-  }
+async function loadGlobal(){
+  try{
+    const g = await api(`${BASE}/global`);
+    tGlobal.textContent = `0% (current ${g.current} / goal ${g.goal}, stage ${g.stage})`;
+  }catch(e){ out(e); }
+}
+
+async function ensurePlayer(){
+  const name = getName();
+  if (!name) return;
+  try{
+    // si no existe, PUT lo crea
+    const data = await api(`${BASE}/players/${encodeURIComponent(name)}`, {
+      method: "PUT",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({})
+    });
+    tLevel.textContent = `Nivel ${data.level ?? 1}`;
+    tXP.textContent = `XP ${data.xp ?? 0}/100`;
+  }catch(e){ out(e); }
 }
 
 async function loadEnemies(){
-  const sel = document.getElementById('enemy');
-  sel.innerHTML='';
-  const r = await fetch(`${base}/enemies`);
-  const list = await r.json();
-  if(!Array.isArray(list) || list.length===0){
-    // si no hay enemigos, probar crear seed desde admin
-    const opt = document.createElement('option');
-    opt.textContent = 'No hay enemigos (pide al admin correr /seed/enemies)';
-    opt.value = '';
-    sel.appendChild(opt);
-    return;
-  }
-  list.forEach(e=>{
-    const opt = document.createElement('option');
-    opt.value = e.id;
-    opt.textContent = `${e.name} (Poder ${e.power}, +${e.rewardXp} XP)`;
-    sel.appendChild(opt);
-  });
+  try{
+    const list = await api(`${BASE}/enemies`);
+    selEnemy.innerHTML = "";
+    list.forEach(e=>{
+      const opt = document.createElement("option");
+      opt.value = e.id;
+      opt.textContent = `${e.name} (Poder ${e.power})`;
+      selEnemy.appendChild(opt);
+    });
+  }catch(e){ out(e); }
 }
 
-async function loadTop(){
-  const r = await fetch(`${base}/leaderboard?limit=10`);
-  const t = await r.json();
-  const tb = document.querySelector('#lb tbody');
-  tb.innerHTML='';
-  (t||[]).forEach((row,i)=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${i+1}</td><td>${row.name||row.id}</td><td>${row.level||1}</td><td>${row.xp||0}</td>`;
-    tb.appendChild(tr);
-  });
+async function loadInventory(){
+  const name = getName(); if (!name){ invList.innerHTML=""; return; }
+  try{
+    const items = await api(`${BASE}/players/${encodeURIComponent(name)}/inventory`);
+    invList.innerHTML = "";
+    if (!items.length){
+      invList.innerHTML = `<div class="rowi"><span class="muted">Sin ítems.</span><span></span><span></span></div>`;
+      return;
+    }
+    items.forEach(it=>{
+      const row = document.createElement("div");
+      row.className = "rowi";
+      row.innerHTML = `
+        <div>
+          <b>${it.name}</b> <span class="muted">(${it.type}${it.rarity? ", "+it.rarity:""})</span>
+          ${it.atk? `<span class="tag">ATK +${it.atk}</span>`:""}
+          ${it.def? `<span class="tag">DEF +${it.def}</span>`:""}
+        </div>
+        <div>
+          ${it.type==="potion"
+            ? `<button class="btn btn-ok" onclick="useItem('${it.id}')">Usar</button>`
+            : it.type==="weapon" || it.type==="armor"
+              ? `<button class="btn btn-warn" onclick="equipItem('${it.id}','${it.type}')">Equipar</button>`
+              : `<span class="muted">—</span>`
+          }
+        </div>
+        <div><button class="btn btn-ghost" onclick="deleteItem('${it.id}')">Eliminar</button></div>
+      `;
+      invList.appendChild(row);
+    });
+  }catch(e){ out(e); }
+}
+
+async function loadEquipment(){
+  const name = getName(); if (!name){ eqWeapon.textContent="-"; eqArmor.textContent="-"; return; }
+  try{
+    const eq = await api(`${BASE}/players/${encodeURIComponent(name)}/equipment`);
+    eqWeapon.textContent = eq.weapon ? `${eq.weapon.name} (ATK +${eq.weapon.atk||0})` : "-";
+    eqArmor.textContent  = eq.armor  ? `${eq.armor.name} (DEF +${eq.armor.def||0})`   : "-";
+  }catch(e){ out(e); }
 }
 
 async function attack(){
   const name = getName();
-  if(!name) return alert('Guarda tu nombre primero');
-  const enemyId = document.getElementById('enemy').value;
-  if(!enemyId) return alert('Selecciona un enemigo');
-  const r = await fetch(`${base}/battle`,{
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ name, enemyId })
-  });
-  const data = await r.json();
-  out(data);
-  await refreshSelf();
-  await loadTop();
+  const enemyId = selEnemy.value;
+  if (!name) return alert("Guarda tu nombre primero");
+  try{
+    const r = await api(`${BASE}/combat/attack`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ name, enemyId })
+    });
+    dropsBox.innerHTML = "";
+    if (r.drops?.length){
+      r.drops.forEach(d=>{
+        const el = document.createElement("div");
+        el.className = "drop";
+        el.textContent = `¡Drop! ${d.item} (${d.type}${d.rarity? ", "+d.rarity:""})`;
+        dropsBox.appendChild(el);
+      });
+    }else{
+      dropsBox.innerHTML = `<div class="muted">Sin drops...</div>`;
+    }
+    await ensurePlayer();
+    await loadInventory();
+    await loadEquipment();
+    out(r);
+  }catch(e){ out(e); }
 }
 
-(async function init(){
-  await refreshGlobal();
-  await refreshSelf();
+async function useItem(id){
+  const name = getName();
+  try{
+    const r = await api(`${BASE}/players/${encodeURIComponent(name)}/inventory/use`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ itemId:id })
+    });
+    await ensurePlayer();
+    await loadInventory();
+    out(r);
+  }catch(e){ out(e); }
+}
+
+async function deleteItem(id){
+  const name = getName();
+  try{
+    const r = await api(`${BASE}/players/${encodeURIComponent(name)}/inventory/${id}`,{ method:"DELETE" });
+    await loadInventory();
+    out(r);
+  }catch(e){ out(e); }
+}
+
+async function equipItem(id, type){
+  const name = getName();
+  const slot = (type==="weapon") ? "weapon" : "armor";
+  try{
+    const r = await api(`${BASE}/players/${encodeURIComponent(name)}/equipment/equip`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ slot, itemId:id })
+    });
+    await loadInventory();
+    await loadEquipment();
+    out(r);
+  }catch(e){ out(e); }
+}
+async function unequip(slot){
+  const name = getName();
+  try{
+    const r = await api(`${BASE}/players/${encodeURIComponent(name)}/equipment/unequip`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ slot })
+    });
+    await loadInventory();
+    await loadEquipment();
+    out(r);
+  }catch(e){ out(e); }
+}
+
+async function loadTop(){
+  try{
+    const data = await api(`${BASE}/leaderboard?limit=10`);
+    outTop.textContent = JSON.stringify(data, null, 2);
+  }catch(e){ outTop.textContent = JSON.stringify(e,null,2); }
+}
+
+async function refreshAll(){
+  const n = localStorage.getItem("playerName");
+  if (n) nameInput.value = n;
+  await ensurePlayer();
+  await loadGlobal();
   await loadEnemies();
-  await loadTop();
-})();
+  await loadInventory();
+  await loadEquipment();
+}
+refreshAll();
 </script>
 </body>
 </html>

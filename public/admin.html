@@ -21,13 +21,12 @@
 <body>
   <h1>MMORPG Admin</h1>
 
-  <!-- PROGRESO GLOBAL -->
   <div class="card">
     <h3>Progreso global</h3>
     <div class="row">
-      <button id="btnView">Ver progreso</button>
-      <button id="btnPlus5" class="secondary">+5</button>
-      <button id="btnPlus100" class="secondary">+100</button>
+      <button type="button" onclick="loadGlobal()">Ver progreso</button>
+      <button type="button" class="secondary" onclick="saveGlobal(5)">+5</button>
+      <button type="button" class="secondary" onclick="saveGlobal(100)">+100</button>
     </div>
     <label>current</label>
     <input id="g_current" type="number" inputmode="numeric" placeholder="0" />
@@ -36,16 +35,15 @@
     <label>stage</label>
     <input id="g_stage" type="number" inputmode="numeric" placeholder="0" />
     <div class="row">
-      <button id="btnSave">Guardar</button>
+      <button type="button" onclick="saveGlobal(0)">Guardar</button>
     </div>
   </div>
 
-  <!-- JUGADORES -->
   <div class="card">
     <h3>Jugadores</h3>
     <div class="row">
-      <button id="btnList">Listar</button>
-      <button id="btnTop">Top 10 (XP)</button>
+      <button type="button" onclick="listPlayers()">Listar</button>
+      <button type="button" onclick="top10()">Top 10 (XP)</button>
     </div>
     <label>name (único)</label>
     <input id="p_name" placeholder="Jugador1" />
@@ -54,9 +52,9 @@
     <label>xp (opcional)</label>
     <input id="p_xp" type="number" inputmode="numeric" placeholder="0" />
     <div class="row">
-      <button id="btnUpsert">Crear/Actualizar</button>
-      <button id="btnAddXp" class="secondary">+50 XP</button>
-      <button id="btnDelete" class="secondary">Borrar jugador</button>
+      <button type="button" onclick="upsertPlayer()">Crear/Actualizar</button>
+      <button type="button" class="secondary" onclick="addXp()">+50 XP</button>
+      <button type="button" class="secondary" onclick="deletePlayer()">Borrar jugador</button>
     </div>
   </div>
 
@@ -66,7 +64,7 @@
   </div>
 
 <script>
-  // Misma API (mismo dominio) donde corre este admin.html
+  // Misma API (mismo dominio)
   const API = "";
 
   const $ = (id) => document.getElementById(id);
@@ -113,7 +111,7 @@
     try { show(await getJSON("/players?limit=50")); }
     catch(e){ show("Error GET /players -> " + e.message); }
   }
-  async function top(){
+  async function top10(){
     try { show(await getJSON("/leaderboard?limit=10")); }
     catch(e){ show("Error GET /leaderboard -> " + e.message); }
   }
@@ -126,7 +124,6 @@
       const body  = {};
       if (!Number.isNaN(level)) body.level = level;
       if (xpStr !== "") body.xp = Number(xpStr);
-
       const res = await sendJSON("PUT", `/players/${encodeURIComponent(name)}`, body);
       show(res);
     } catch(e){ show("Error PUT /players/:name -> " + e.message); }
@@ -148,19 +145,7 @@
     } catch(e){ show("Error POST /players/delete -> " + e.message); }
   }
 
-  // Eventos
-  $("btnView").onclick     = loadGlobal;
-  $("btnPlus5").onclick    = () => saveGlobal(5);
-  $("btnPlus100").onclick  = () => saveGlobal(100);
-  $("btnSave").onclick     = () => saveGlobal(0);
-
-  $("btnList").onclick     = listPlayers;
-  $("btnTop").onclick      = top;
-  $("btnUpsert").onclick   = upsertPlayer;
-  $("btnAddXp").onclick    = addXp;
-  $("btnDelete").onclick   = deletePlayer;
-
-  // carga inicial
+  // Carga inicial (si falla, al menos verás el error en "Salida")
   loadGlobal().catch(()=>{});
 </script>
 </body>

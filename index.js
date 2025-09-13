@@ -1,9 +1,9 @@
-// MMORPG API - Cloud Run
+// index.js — API MMORPG (global + players + enemies + combat + inventory + equipment)
 import express from "express";
 import cors from "cors";
+import { Firestore, FieldValue } from "@google-cloud/firestore";
 import path from "path";
 import { fileURLToPath } from "url";
-import { Firestore, FieldValue } from "@google-cloud/firestore";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,67 +11,81 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+
+// Sirve archivos estáticos de /public (player.html, css, etc.)
+app.use(express.static("public"));
 
 const db = new Firestore();
 const PORT = process.env.PORT || 8080;
 
-const ADMIN_SECRET = process.env.ADMIN_SECRET || "";
-const requireAdmin = (req, res, next) => {
-  if (!ADMIN_SECRET) return next();
-  const key = req.header("x-admin-secret") || "";
-  if (key === ADMIN_SECRET) return next();
-  return res.status(403).json({ error: "forbidden" });
-};
-
-const sendPublic = fname => (_req, res) =>
-  res.sendFile(path.join(__dirname, "public", fname));
-app.get("/admin", sendPublic("admin.html"));
-app.get("/admin.html", sendPublic("admin.html"));
-app.get("/player", sendPublic("player.html"));
-app.get("/player.html", sendPublic("player.html"));
-
-// --- Firestore names ---
+// ------------------- Constantes / helpers -------------------
 const ROOT_COLLECTION = "world_progress";
 const GLOBAL_DOC_ID = "global";
 const PLAYERS_SUBCOLL = "world_progress";
-const QUESTS_SUBCOLL = "quests";
-const ENEMIES_SUBCOLL = "enemies"; // NUEVO
+const ENEMIES_SUBCOLL = "enemies";     // spawns
+const INVENTORY_SUBCOLL = "inventory"; // items del jugador
+const EQUIPMENT_SUBCOLL = "equipment"; // piezas equipadas
 
 const toInt = (v, d = 0) => {
   const n = Number(v);
   return Number.isFinite(n) ? Math.trunc(n) : d;
 };
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
-// ======= HOME =======
+// Leveling simple
+const XP_PER_LEVEL = 100;
+function applyLevelUp(p) {
+  let changed = false;
+  let xp = toInt(p.xp, 0);
+  let level = clamp(toInt(p.level, 1), 1, 9999);
+
+  while (xp >= XP_PER_LEVEL) {
+    xp -= XP_PER_LEVEL;
+    level += 1;
+    changed = true;
+  }
+  return { level, xp, changed };
+}
+
+// ------------------- Home -------------------
 app.get("/", (_req, res) => {
   res.json({
-    ok: true,
     service: "mmorpgapi",
     time: new Date().toISOString(),
     endpoints: [
-      "GET /player (UI) | GET /admin (UI)",
-      "GET /global | PATCH /global {current?,goal?,stage?}",
-      "GET /players?limit&startAfter | GET /players/:name | PUT /players/:name {level?,xp?} | DELETE /players/:name",
-      "POST /players/addxp {name,xp}",
-      "GET /leaderboard?limit=10",
-      "GET /quests | POST /quests | PATCH /quests/:id | DELETE /quests/:id",
-      "GET /enemies",
-      "POST /seed/enemies (admin)",
-      "POST /battle {name, enemyId}"
+      "GET  /global",
+      "PATCH /global {current?,goal?,stage?}",
+      "GET  /players?limit&startAfter",
+      "GET  /players/:name",
+      "PUT  /players/:name {level?, xp?}",
+      "DELETE /players/:name",
+      "GET  /leaderboard?limit",
+
+      "GET  /enemies           (spawn list)",
+      "POST /combat/attack     {name, enemyId}",
+
+      "GET  /players/:name/inventory",
+      "POST /players/:name/inventory/use     {itemId}",
+      "DELETE /players/:name/inventory/:id",
+
+      "GET  /players/:name/equipment",
+      "POST /players/:name/equipment/equip   {slot, itemId}",
+      "POST /players/:name/equipment/unequip {slot}",
+
+      "GET  /player.html"
     ]
   });
 });
 
-// ======= GLOBAL =======
+// ------------------- GLOBAL -------------------
 app.get("/global", async (_req, res) => {
   try {
     const snap = await db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).get();
-    const d = snap.exists ? snap.data() : {};
+    const data = snap.exists ? snap.data() : {};
     res.json({
-      current: toInt(d.current, 0),
-      goal: toInt(d.goal, 10000),
-      stage: toInt(d.stage, 1)
+      current: toInt(data.current, 0),
+      goal: toInt(data.goal, 10000),
+      stage: toInt(data.stage, 0)
     });
   } catch (e) {
     console.error("GET /global", e);
@@ -79,12 +93,14 @@ app.get("/global", async (_req, res) => {
   }
 });
 
-app.patch("/global", requireAdmin, async (req, res) => {
+app.patch("/global", async (req, res) => {
   try {
+    const { current, goal, stage } = req.body || {};
     const payload = {};
-    ["current", "goal", "stage"].forEach(k => {
-      if (req.body?.[k] !== undefined) payload[k] = toInt(req.body[k]);
-    });
+    if (Number.isFinite(Number(current))) payload.current = toInt(current);
+    if (Number.isFinite(Number(goal))) payload.goal = toInt(goal);
+    if (Number.isFinite(Number(stage))) payload.stage = toInt(stage);
+
     await db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).set(payload, { merge: true });
     const snap = await db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).get();
     res.json(snap.data() || {});
@@ -94,19 +110,23 @@ app.patch("/global", requireAdmin, async (req, res) => {
   }
 });
 
-// ======= PLAYERS =======
+// ------------------- PLAYERS básicos -------------------
 app.get("/players", async (req, res) => {
   try {
-    const limit = Math.min(Math.max(toInt(req.query.limit, 25), 1), 100);
+    const limit = clamp(toInt(req.query.limit, 25), 1, 100);
     const startAfter = (req.query.startAfter || "").toString();
 
-    let q = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).collection(PLAYERS_SUBCOLL)
-      .orderBy("name").limit(limit);
+    let q = db.collection(ROOT_COLLECTION)
+      .doc(GLOBAL_DOC_ID)
+      .collection(PLAYERS_SUBCOLL)
+      .orderBy("name")
+      .limit(limit);
+
     if (startAfter) q = q.startAfter(startAfter);
 
     const qs = await q.get();
     const items = qs.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
-    const nextPageToken = items.length ? (items[items.length - 1].name || items[items.length - 1].id) : null;
+    const nextPageToken = items.length ? (items.at(-1).name || items.at(-1).id) : null;
 
     res.json({ items, nextPageToken });
   } catch (e) {
@@ -120,7 +140,9 @@ app.get("/players/:name", async (req, res) => {
     const name = String(req.params.name || "").trim();
     if (!name) return res.status(400).json({ error: "name_required" });
 
-    const ref = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).collection(PLAYERS_SUBCOLL).doc(name);
+    const ref = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
+      .collection(PLAYERS_SUBCOLL).doc(name);
+
     const snap = await ref.get();
     if (!snap.exists) return res.status(404).json({ error: "not_found" });
 
@@ -139,23 +161,33 @@ app.put("/players/:name", async (req, res) => {
     const level = toInt(req.body?.level, 1);
     const xp = toInt(req.body?.xp, 0);
 
-    const ref = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).collection(PLAYERS_SUBCOLL).doc(name);
+    const ref = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
+      .collection(PLAYERS_SUBCOLL).doc(name);
+
     await ref.set({ name, level, xp }, { merge: true });
 
-    const snap = await ref.get();
-    res.json({ id: ref.id, ...(snap.data() || {}) });
+    // normaliza por si subió de nivel
+    const fresh = (await ref.get()).data() || { name, level, xp };
+    const upd = applyLevelUp(fresh);
+    if (upd.changed) {
+      await ref.set({ level: upd.level, xp: upd.xp }, { merge: true });
+    }
+    res.json((await ref.get()).data());
   } catch (e) {
     console.error("PUT /players/:name", e);
     res.status(500).json({ error: "failed_upsert_player" });
   }
 });
 
-app.delete("/players/:name", requireAdmin, async (req, res) => {
+app.delete("/players/:name", async (req, res) => {
   try {
     const name = String(req.params.name || "").trim();
     if (!name) return res.status(400).json({ error: "name_required" });
 
-    await db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).collection(PLAYERS_SUBCOLL).doc(name).delete();
+    const ref = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
+      .collection(PLAYERS_SUBCOLL).doc(name);
+
+    await ref.delete();
     res.json({ ok: true, name });
   } catch (e) {
     console.error("DELETE /players/:name", e);
@@ -163,199 +195,275 @@ app.delete("/players/:name", requireAdmin, async (req, res) => {
   }
 });
 
-app.post("/players/addxp", async (req, res) => {
-  try {
-    const name = String(req.body?.name || "").trim();
-    const delta = toInt(req.body?.xp, 0);
-    if (!name) return res.status(400).json({ error: "name_required" });
-
-    const ref = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).collection(PLAYERS_SUBCOLL).doc(name);
-    await ref.set({ name, level: 1, xp: 0 }, { merge: true });
-    await ref.update({ xp: FieldValue.increment(delta) });
-
-    const snap = await ref.get();
-    res.json({ ok: true, ...(snap.data() || {}) });
-  } catch (e) {
-    console.error("POST /players/addxp", e);
-    res.status(500).json({ error: "failed_add_xp" });
-  }
-});
-
-// ======= LEADERBOARD =======
 app.get("/leaderboard", async (req, res) => {
   try {
-    const limit = Math.min(Math.max(toInt(req.query.limit, 10), 1), 100);
-    const qs = await db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).collection(PLAYERS_SUBCOLL)
-      .orderBy("xp", "desc").limit(limit).get();
-    const items = qs.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
-    res.json(items);
+    const limit = clamp(toInt(req.query.limit, 10), 1, 100);
+    const q = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
+      .collection(PLAYERS_SUBCOLL)
+      .orderBy("xp", "desc")
+      .limit(limit);
+    const qs = await q.get();
+    res.json(qs.docs.map(d => ({ id: d.id, ...(d.data() || {}) })));
   } catch (e) {
     console.error("GET /leaderboard", e);
     res.status(500).json({ error: "failed_leaderboard" });
   }
 });
 
-// ======= QUESTS =======
-app.get("/quests", async (_req, res) => {
-  try {
-    const qs = await db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).collection(QUESTS_SUBCOLL)
-      .orderBy("createdAt", "desc").get();
-    const items = qs.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
-    res.json(items);
-  } catch (e) {
-    console.error("GET /quests", e);
-    res.status(500).json({ error: "failed_list_quests" });
-  }
-});
-
-app.post("/quests", requireAdmin, async (req, res) => {
-  try {
-    const title = String(req.body?.title || "").trim();
-    const status = String(req.body?.status || "open").trim();
-    if (!title) return res.status(400).json({ error: "title_required" });
-
-    const col = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).collection(QUESTS_SUBCOLL);
-    const ref = await col.add({ title, status, createdAt: new Date().toISOString() });
-    const snap = await ref.get();
-    res.json({ id: ref.id, ...(snap.data() || {}) });
-  } catch (e) {
-    console.error("POST /quests", e);
-    res.status(500).json({ error: "failed_create_quest" });
-  }
-});
-
-app.patch("/quests/:id", requireAdmin, async (req, res) => {
-  try {
-    const id = String(req.params.id || "").trim();
-    if (!id) return res.status(400).json({ error: "id_required" });
-    const payload = {};
-    if (typeof req.body?.title === "string") payload.title = req.body.title;
-    if (typeof req.body?.status === "string") payload.status = req.body.status;
-    payload.updatedAt = new Date().toISOString();
-
-    const ref = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).collection(QUESTS_SUBCOLL).doc(id);
-    await ref.set(payload, { merge: true });
-    const snap = await ref.get();
-    res.json({ id, ...(snap.data() || {}) });
-  } catch (e) {
-    console.error("PATCH /quests/:id", e);
-    res.status(500).json({ error: "failed_patch_quest" });
-  }
-});
-
-app.delete("/quests/:id", requireAdmin, async (req, res) => {
-  try {
-    const id = String(req.params.id || "").trim();
-    if (!id) return res.status(400).json({ error: "id_required" });
-
-    await db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).collection(QUESTS_SUBCOLL).doc(id).delete();
-    res.json({ ok: true, id });
-  } catch (e) {
-    console.error("DELETE /quests/:id", e);
-    res.status(500).json({ error: "failed_delete_quest" });
-  }
-});
-
-// ======= ENEMIGOS =======
-// GET /enemies -> lista
+// ------------------- ENEMIGOS (spawns) -------------------
+// Estructura típica de un enemy:
+// { id, name, power, hp, xpReward, loot: [{item, type, rarity, chance, atk?, def?}] }
 app.get("/enemies", async (_req, res) => {
   try {
-    const qs = await db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).collection(ENEMIES_SUBCOLL)
-      .orderBy("power", "asc").get();
-    const items = qs.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
-    res.json(items);
+    const col = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).collection(ENEMIES_SUBCOLL);
+    const qs = await col.orderBy("power").get();
+    res.json(qs.docs.map(d => ({ id: d.id, ...(d.data() || {}) })));
   } catch (e) {
     console.error("GET /enemies", e);
     res.status(500).json({ error: "failed_list_enemies" });
   }
 });
 
-// POST /seed/enemies (admin) -> crea 6 enemigos base
-app.post("/seed/enemies", requireAdmin, async (_req, res) => {
+// ------------------- COMBATE + DROPS -------------------
+app.post("/combat/attack", async (req, res) => {
   try {
-    const col = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).collection(ENEMIES_SUBCOLL);
-    const defaults = [
-      { id:"slime",  name:"Slime",        power: 1,  rewardXp: 10 },
-      { id:"wolf",   name:"Lobo",         power: 5,  rewardXp: 25 },
-      { id:"goblin", name:"Goblin",       power: 10, rewardXp: 50 },
-      { id:"ogre",   name:"Ogro",         power: 20, rewardXp: 120 },
-      { id:"mage",   name:"Mago oscuro",  power: 35, rewardXp: 220 },
-      { id:"dragon", name:"Dragón",       power: 60, rewardXp: 500 },
-    ];
-    const batch = db.batch();
-    defaults.forEach(e => batch.set(col.doc(e.id), e, { merge: true }));
-    await batch.commit();
-    res.json({ ok: true, created: defaults.length });
-  } catch (e) {
-    console.error("POST /seed/enemies", e);
-    res.status(500).json({ error: "failed_seed_enemies" });
-  }
-});
-
-// ======= BATALLA =======
-// POST /battle { name, enemyId }
-// Lógica: prob. de victoria depende de level vs. power (+ algo de azar).
-// Recompensa: XP del enemigo, y subir nivel cada 100 xp acumulados (config simple).
-app.post("/battle", async (req, res) => {
-  try {
-    const name = String(req.body?.name || "").trim();
-    const enemyId = String(req.body?.enemyId || "").trim();
+    const { name, enemyId } = req.body || {};
     if (!name || !enemyId) return res.status(400).json({ error: "name_and_enemy_required" });
 
-    // lee jugador
-    const pRef = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).collection(PLAYERS_SUBCOLL).doc(name);
-    await pRef.set({ name, level: 1, xp: 0 }, { merge: true });
-    const pSnap = await pRef.get();
-    const player = pSnap.data() || { name, level: 1, xp: 0 };
+    const playerRef = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
+      .collection(PLAYERS_SUBCOLL).doc(name);
+    const playerSnap = await playerRef.get();
 
-    // lee enemigo
-    const eRef = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).collection(ENEMIES_SUBCOLL).doc(enemyId);
-    const eSnap = await eRef.get();
-    if (!eSnap.exists) return res.status(404).json({ error: "enemy_not_found" });
-    const enemy = eSnap.data();
+    if (!playerSnap.exists) {
+      await playerRef.set({ name, level: 1, xp: 0 }, { merge: true });
+    }
+    const player = (await playerRef.get()).data();
 
-    // prob. victoria
-    const lvl = toInt(player.level, 1);
-    const power = toInt(enemy.power, 1);
-    const base = 0.35 + (lvl / (lvl + power + 1)); // 0.35..0.85 aprox
-    const roll = Math.random(); // 0..1
-    const win = roll < base;
+    const enemyRef = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
+      .collection(ENEMIES_SUBCOLL).doc(enemyId);
+    const enemySnap = await enemyRef.get();
+    if (!enemySnap.exists) return res.status(404).json({ error: "enemy_not_found" });
+    const enemy = enemySnap.data();
 
-    let xpGain = 0;
-    let newLevel = lvl;
-    let newXp = toInt(player.xp, 0);
+    // poder básico jugador = nivel * 10 + bonus por equipo
+    const eqRef = playerRef.collection(EQUIPMENT_SUBCOLL);
+    const weapon = (await eqRef.doc("weapon").get()).data() || {};
+    const armor  = (await eqRef.doc("armor").get()).data()  || {};
+    const atkBonus = toInt(weapon.atk, 0);
+    const defBonus = toInt(armor.def, 0);
+
+    const playerPower = toInt(player.level, 1) * 10 + atkBonus + Math.floor(defBonus / 2);
+    const enemyPower  = toInt(enemy.power, 5);
+
+    // Probabilidad de victoria simple (suavizada)
+    const winProb = clamp(0.5 + (playerPower - enemyPower) / (playerPower + enemyPower + 1), 0.1, 0.9);
+    const win = Math.random() < winProb;
+
+    let xpDelta = 0;
+    const drops = [];
 
     if (win) {
-      xpGain = toInt(enemy.rewardXp, 10);
-      newXp += xpGain;
-      // subir nivel cada 100xp
-      const lvlUps = Math.floor(newXp / 100);
-      newLevel = Math.max(1, lvlUps + 1);
-    } else {
-      // derrota: poca xp de consuelo
-      xpGain = 2;
-      newXp += xpGain;
-      const lvlUps = Math.floor(newXp / 100);
-      newLevel = Math.max(1, lvlUps + 1);
+      xpDelta = toInt(enemy.xpReward, 10);
+      // tiradas de loot
+      for (const l of enemy.loot || []) {
+        const chance = Number(l.chance) || 0;
+        if (Math.random() < chance) {
+          // crear item en inventario
+          const invRef = playerRef.collection(INVENTORY_SUBCOLL);
+          const doc = await invRef.add({
+            name: l.item,
+            type: l.type,          // potion | weapon | armor | misc
+            rarity: l.rarity || "common",
+            atk: toInt(l.atk, 0),
+            def: toInt(l.def, 0),
+            qty: 1,
+            createdAt: new Date().toISOString()
+          });
+          drops.push({ id: doc.id, item: l.item, type: l.type, rarity: l.rarity || "common", atk: toInt(l.atk,0), def: toInt(l.def,0) });
+        }
+      }
+      // sumar XP y aplicar level up
+      const newXP = toInt(player.xp, 0) + xpDelta;
+      const { level, xp } = applyLevelUp({ level: player.level, xp: newXP });
+      await playerRef.set({ xp, level }, { merge: true });
     }
 
-    await pRef.set({ xp: newXp, level: newLevel }, { merge: true });
-    const result = {
-      ok: true,
+    res.json({
       win,
-      roll: Number(roll.toFixed(3)),
-      chance: Number(base.toFixed(2)),
-      enemy: { id: enemyId, name: enemy.name, power: enemy.power, rewardXp: enemy.rewardXp },
-      reward: { xp: xpGain },
-      player: { name, level: newLevel, xp: newXp }
-    };
-    res.json(result);
+      playerPower,
+      enemyPower,
+      xpGained: xpDelta,
+      drops
+    });
   } catch (e) {
-    console.error("POST /battle", e);
-    res.status(500).json({ error: "failed_battle" });
+    console.error("POST /combat/attack", e);
+    res.status(500).json({ error: "failed_combat" });
   }
 });
 
+// ------------------- INVENTARIO -------------------
+app.get("/players/:name/inventory", async (req, res) => {
+  try {
+    const name = String(req.params.name || "");
+    const invCol = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
+      .collection(PLAYERS_SUBCOLL).doc(name).collection(INVENTORY_SUBCOLL);
+
+    const qs = await invCol.orderBy("createdAt", "desc").get();
+    res.json(qs.docs.map(d => ({ id: d.id, ...(d.data() || {}) })));
+  } catch (e) {
+    console.error("GET /players/:name/inventory", e);
+    res.status(500).json({ error: "failed_inventory" });
+  }
+});
+
+// Usar un ítem (soporte: potion => +20 xp; misc sin efecto; weapon/armor no se usan aquí)
+app.post("/players/:name/inventory/use", async (req, res) => {
+  try {
+    const name = String(req.params.name || "");
+    const { itemId } = req.body || {};
+    if (!itemId) return res.status(400).json({ error: "itemId_required" });
+
+    const playerRef = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
+      .collection(PLAYERS_SUBCOLL).doc(name);
+
+    const itemRef = playerRef.collection(INVENTORY_SUBCOLL).doc(itemId);
+    const item = (await itemRef.get()).data();
+    if (!item) return res.status(404).json({ error: "item_not_found" });
+
+    let effect = null;
+
+    if (item.type === "potion") {
+      // +20 XP por poción
+      const p = (await playerRef.get()).data();
+      const newXP = toInt(p.xp, 0) + 20;
+      const { level, xp } = applyLevelUp({ level: p.level, xp: newXP });
+      await playerRef.set({ xp, level }, { merge: true });
+
+      // consumir poción
+      await itemRef.delete();
+      effect = { xpAdded: 20, newLevel: level, newXP: xp };
+    } else {
+      effect = { note: "item_no_consumible" };
+    }
+
+    res.json({ ok: true, effect });
+  } catch (e) {
+    console.error("POST /inventory/use", e);
+    res.status(500).json({ error: "failed_use_item" });
+  }
+});
+
+app.delete("/players/:name/inventory/:id", async (req, res) => {
+  try {
+    const name = String(req.params.name || "");
+    const id = String(req.params.id || "");
+    const itemRef = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
+      .collection(PLAYERS_SUBCOLL).doc(name)
+      .collection(INVENTORY_SUBCOLL).doc(id);
+    await itemRef.delete();
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("DELETE /inventory", e);
+    res.status(500).json({ error: "failed_delete_item" });
+  }
+});
+
+// ------------------- EQUIPAMIENTO -------------------
+app.get("/players/:name/equipment", async (req, res) => {
+  try {
+    const name = String(req.params.name || "");
+    const eqCol = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
+      .collection(PLAYERS_SUBCOLL).doc(name).collection(EQUIPMENT_SUBCOLL);
+
+    const weapon = (await eqCol.doc("weapon").get()).data() || null;
+    const armor  = (await eqCol.doc("armor").get()).data() || null;
+    res.json({ weapon, armor });
+  } catch (e) {
+    console.error("GET /equipment", e);
+    res.status(500).json({ error: "failed_equipment" });
+  }
+});
+
+// Equipa un ítem del inventario en un slot ("weapon" | "armor")
+app.post("/players/:name/equipment/equip", async (req, res) => {
+  try {
+    const name = String(req.params.name || "");
+    const { slot, itemId } = req.body || {};
+    if (!slot || !itemId) return res.status(400).json({ error: "slot_and_itemId_required" });
+    if (!["weapon", "armor"].includes(slot)) return res.status(400).json({ error: "invalid_slot" });
+
+    const playerRef = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
+      .collection(PLAYERS_SUBCOLL).doc(name);
+
+    const invRef = playerRef.collection(INVENTORY_SUBCOLL).doc(itemId);
+    const item = (await invRef.get()).data();
+    if (!item) return res.status(404).json({ error: "item_not_found" });
+
+    if (slot === "weapon" && item.type !== "weapon") return res.status(400).json({ error: "item_not_weapon" });
+    if (slot === "armor" && item.type !== "armor")   return res.status(400).json({ error: "item_not_armor" });
+
+    const eqRef = playerRef.collection(EQUIPMENT_SUBCOLL).doc(slot);
+    await eqRef.set({
+      id: itemId,
+      name: item.name,
+      atk: toInt(item.atk, 0),
+      def: toInt(item.def, 0),
+      rarity: item.rarity || "common",
+      equippedAt: new Date().toISOString()
+    });
+
+    // al equipar, opcionalmente removemos del inventario
+    await invRef.delete();
+
+    const equip = {
+      weapon: (await playerRef.collection(EQUIPMENT_SUBCOLL).doc("weapon").get()).data() || null,
+      armor:  (await playerRef.collection(EQUIPMENT_SUBCOLL).doc("armor").get()).data()  || null,
+    };
+    res.json({ ok: true, equip });
+  } catch (e) {
+    console.error("POST /equipment/equip", e);
+    res.status(500).json({ error: "failed_equip" });
+  }
+});
+
+app.post("/players/:name/equipment/unequip", async (req, res) => {
+  try {
+    const name = String(req.params.name || "");
+    const { slot } = req.body || {};
+    if (!["weapon", "armor"].includes(slot)) return res.status(400).json({ error: "invalid_slot" });
+
+    const eqDoc = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
+      .collection(PLAYERS_SUBCOLL).doc(name).collection(EQUIPMENT_SUBCOLL).doc(slot);
+
+    const data = (await eqDoc.get()).data();
+    if (data) {
+      // devolver al inventario
+      const invCol = db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
+        .collection(PLAYERS_SUBCOLL).doc(name).collection(INVENTORY_SUBCOLL);
+      await invCol.add({
+        name: data.name,
+        type: slot === "weapon" ? "weapon" : "armor",
+        atk: toInt(data.atk, 0),
+        def: toInt(data.def, 0),
+        rarity: data.rarity || "common",
+        qty: 1,
+        createdAt: new Date().toISOString()
+      });
+    }
+    await eqDoc.delete();
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("POST /equipment/unequip", e);
+    res.status(500).json({ error: "failed_unequip" });
+  }
+});
+
+// ------------------- Player UI (por si acceden directo a /player.html) -------------------
+app.get("/player.html", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "player.html"));
+});
+
+// ------------------- Run -------------------
 app.listen(PORT, () => {
   console.log(`mmorpgapi listening on ${PORT}`);
 });

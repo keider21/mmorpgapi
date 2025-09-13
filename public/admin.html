@@ -1,3 +1,11 @@
+<body>
+  <div id="nav"></div>
+  <script>
+    fetch("/_nav.html").then(r=>r.text()).then(html => {
+      document.getElementById("nav").innerHTML = html;
+    });
+  </script>
+  <!-- el resto de tu página -->
 <!-- public/admin.html – Panel Admin (global, players, quests, mantenimiento) -->
 <!doctype html>
 <html lang="es">

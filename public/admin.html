@@ -6,135 +6,162 @@
   <title>MMORPG Admin</title>
   <style>
     :root { color-scheme: light dark; }
-    body { font-family: system-ui, Arial, sans-serif; margin:16px; }
+    body{font-family:system-ui,Arial,sans-serif;margin:16px;max-width:760px}
     h1{margin:0 0 16px}
-    .card{border:1px solid #8884; border-radius:10px; padding:12px; margin:12px 0;}
-    .row{display:flex; gap:8px; flex-wrap:wrap}
+    .card{border:1px solid #8884;border-radius:12px;padding:12px;margin:12px 0}
+    .row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
     .row>*{flex:1}
-    input,button{padding:10px; border-radius:8px; border:1px solid #8884; width:100%}
-    button{background:#111; color:#fff; border:none}
-    pre{background:#000; color:#0f0; padding:10px; border-radius:8px; overflow:auto}
-    small{opacity:.7}
+    input,button{padding:10px;border-radius:10px;border:1px solid #8884;font-size:16px;width:100%}
+    button{background:#111;color:#fff;border:none}
+    button.secondary{background:#666}
+    pre{background:#000;color:#0f0;padding:12px;border-radius:10px;overflow:auto;min-height:44px}
+    label{font-size:12px;opacity:.8;margin-top:4px;display:block}
   </style>
 </head>
 <body>
   <h1>MMORPG Admin</h1>
 
-  <!-- Progreso global -->
+  <!-- PROGRESO GLOBAL -->
   <div class="card">
     <h3>Progreso global</h3>
     <div class="row">
-      <button id="btnVerGlobal">Ver progreso</button>
-      <button id="btnAdd5">+5</button>
-      <button id="btnAdd100">+100</button>
+      <button id="btnView">Ver progreso</button>
+      <button id="btnPlus5" class="secondary">+5</button>
+      <button id="btnPlus100" class="secondary">+100</button>
     </div>
-    <small>current</small>
-    <input id="g_current" type="number" placeholder="0" />
-    <small>goal</small>
-    <input id="g_goal" type="number" placeholder="10000" />
-    <small>stage</small>
-    <input id="g_stage" type="number" placeholder="0" />
+    <label>current</label>
+    <input id="g_current" type="number" inputmode="numeric" placeholder="0" />
+    <label>goal</label>
+    <input id="g_goal" type="number" inputmode="numeric" placeholder="10000" />
+    <label>stage</label>
+    <input id="g_stage" type="number" inputmode="numeric" placeholder="0" />
     <div class="row">
-      <button id="btnSaveGlobal">Guardar</button>
+      <button id="btnSave">Guardar</button>
     </div>
   </div>
 
-  <!-- Jugadores -->
+  <!-- JUGADORES -->
   <div class="card">
     <h3>Jugadores</h3>
     <div class="row">
       <button id="btnList">Listar</button>
+      <button id="btnTop">Top 10 (XP)</button>
     </div>
-    <small>name (único)</small>
+    <label>name (único)</label>
     <input id="p_name" placeholder="Jugador1" />
-    <small>level</small>
-    <input id="p_level" type="number" placeholder="1" />
-    <small>xp (opcional)</small>
-    <input id="p_xp" type="number" placeholder="0" />
+    <label>level</label>
+    <input id="p_level" type="number" inputmode="numeric" placeholder="1" />
+    <label>xp (opcional)</label>
+    <input id="p_xp" type="number" inputmode="numeric" placeholder="0" />
     <div class="row">
       <button id="btnUpsert">Crear/Actualizar</button>
+      <button id="btnAddXp" class="secondary">+50 XP</button>
+      <button id="btnDelete" class="secondary">Borrar jugador</button>
     </div>
   </div>
 
   <div class="card">
     <h3>Salida</h3>
-    <pre id="out">-</pre>
+    <pre id="out">—</pre>
   </div>
 
 <script>
-const BASE = ""; // está en el mismo dominio (Cloud Run)
+  // Misma API (mismo dominio) donde corre este admin.html
+  const API = "";
 
-const out = (x) => {
-  const pre = document.getElementById("out");
-  pre.textContent = typeof x === "string" ? x : JSON.stringify(x, null, 2);
-};
+  const $ = (id) => document.getElementById(id);
+  const show = (x) => { $("out").textContent = typeof x === "string" ? x : JSON.stringify(x, null, 2); };
 
-// Helpers
-async function getJSON(path){
-  const r = await fetch(BASE + path, { headers: { "Accept": "application/json" } });
-  if(!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-  return r.json();
-}
-async function postJSON(path, body){
-  const r = await fetch(BASE + path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Accept":"application/json" },
-    body: JSON.stringify(body)
-  });
-  if(!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-  return r.json();
-}
+  async function getJSON(path){
+    const r = await fetch(API + path, { headers: { "Accept":"application/json" }});
+    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    return r.json();
+  }
+  async function sendJSON(method, path, body){
+    const r = await fetch(API + path, {
+      method,
+      headers: { "Content-Type":"application/json", "Accept":"application/json" },
+      body: JSON.stringify(body||{})
+    });
+    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    return r.json();
+  }
 
-// GLOBAL
-async function verGlobal(){
-  try{
-    const data = await getJSON("/global");
-    document.getElementById("g_current").value = data.current ?? 0;
-    document.getElementById("g_goal").value = data.goal ?? 10000;
-    document.getElementById("g_stage").value = data.stage ?? 0;
-    out(data);
-  }catch(e){ out("Error GET /global -> " + e.message); }
-}
-async function guardarGlobal(deltaSum){
-  try{
-    const cur = Number(document.getElementById("g_current").value || 0) + (deltaSum||0);
-    const goal = Number(document.getElementById("g_goal").value || 0);
-    const stage = Number(document.getElementById("g_stage").value || 0);
-    const res = await postJSON("/global", { current: cur, goal, stage });
-    // recargar valores desde servidor
-    await verGlobal();
-    out(res);
-  }catch(e){ out("Error POST /global -> " + e.message); }
-}
+  // ---- GLOBAL ----
+  async function loadGlobal(){
+    try {
+      const g = await getJSON("/global");
+      $("g_current").value = g.current ?? 0;
+      $("g_goal").value    = g.goal ?? 10000;
+      $("g_stage").value   = g.stage ?? 0;
+      show(g);
+    } catch(e){ show("Error GET /global -> " + e.message); }
+  }
+  async function saveGlobal(delta=0){
+    try {
+      const current = Number($("g_current").value || 0) + delta;
+      const goal    = Number($("g_goal").value || 0);
+      const stage   = Number($("g_stage").value || 0);
+      const res = await sendJSON("PATCH", "/global", { current, goal, stage });
+      await loadGlobal();
+      show(res);
+    } catch(e){ show("Error PATCH /global -> " + e.message); }
+  }
 
-// PLAYERS
-async function listar(){
-  try{ out(await getJSON("/players")); }
-  catch(e){ out("Error GET /players -> " + e.message); }
-}
-async function upsert(){
-  try{
-    const name = document.getElementById("p_name").value.trim();
-    const level = Number(document.getElementById("p_level").value || 1);
-    const xpStr = document.getElementById("p_xp").value;
-    const body = { name, level };
-    if (xpStr !== "") body.xp = Number(xpStr); // opcional
+  // ---- PLAYERS ----
+  async function listPlayers(){
+    try { show(await getJSON("/players?limit=50")); }
+    catch(e){ show("Error GET /players -> " + e.message); }
+  }
+  async function top(){
+    try { show(await getJSON("/leaderboard?limit=10")); }
+    catch(e){ show("Error GET /leaderboard -> " + e.message); }
+  }
+  async function upsertPlayer(){
+    try {
+      const name  = $("p_name").value.trim();
+      if (!name) return show("Pon un name");
+      const level = Number($("p_level").value || 1);
+      const xpStr = $("p_xp").value;
+      const body  = {};
+      if (!Number.isNaN(level)) body.level = level;
+      if (xpStr !== "") body.xp = Number(xpStr);
 
-    const res = await postJSON("/players/create", body);
-    out(res);
-  }catch(e){ out("Error POST /players/create -> " + e.message); }
-}
+      const res = await sendJSON("PUT", `/players/${encodeURIComponent(name)}`, body);
+      show(res);
+    } catch(e){ show("Error PUT /players/:name -> " + e.message); }
+  }
+  async function addXp(){
+    try {
+      const name = $("p_name").value.trim();
+      if (!name) return show("Pon un name");
+      const res = await sendJSON("POST", "/players/addxp", { name, xp: 50 });
+      show(res);
+    } catch(e){ show("Error POST /players/addxp -> " + e.message); }
+  }
+  async function deletePlayer(){
+    try {
+      const name = $("p_name").value.trim();
+      if (!name) return show("Pon un name");
+      const res = await sendJSON("POST", "/players/delete", { name });
+      show(res);
+    } catch(e){ show("Error POST /players/delete -> " + e.message); }
+  }
 
-// Eventos
-document.getElementById("btnVerGlobal").onclick = verGlobal;
-document.getElementById("btnSaveGlobal").onclick = () => guardarGlobal(0);
-document.getElementById("btnAdd5").onclick = () => guardarGlobal(5);
-document.getElementById("btnAdd100").onclick = () => guardarGlobal(100);
-document.getElementById("btnList").onclick = listar;
-document.getElementById("btnUpsert").onclick = upsert;
+  // Eventos
+  $("btnView").onclick     = loadGlobal;
+  $("btnPlus5").onclick    = () => saveGlobal(5);
+  $("btnPlus100").onclick  = () => saveGlobal(100);
+  $("btnSave").onclick     = () => saveGlobal(0);
 
-// carga inicial
-verGlobal().catch(()=>{});
+  $("btnList").onclick     = listPlayers;
+  $("btnTop").onclick      = top;
+  $("btnUpsert").onclick   = upsertPlayer;
+  $("btnAddXp").onclick    = addXp;
+  $("btnDelete").onclick   = deletePlayer;
+
+  // carga inicial
+  loadGlobal().catch(()=>{});
 </script>
 </body>
 </html>

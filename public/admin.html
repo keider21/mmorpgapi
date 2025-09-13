@@ -1,198 +1,217 @@
+<!-- public/admin.html – Panel Admin (global, players, quests, mantenimiento) -->
 <!doctype html>
-<html>
+<html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MMORPG Admin</title>
   <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 16px; }
+    :root { --bg:#0f0f10; --fg:#f5f5f5; --muted:#b9b9b9; --card:#18191c; --accent:#ff5757; --ok:#2ecc71; }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; }
+    body { margin: 0; background: var(--bg); color: var(--fg); padding: 16px; }
     h1 { margin: 0 0 12px; }
-    .card { border: 1px solid #4443; border-radius: 10px; padding: 14px; margin: 14px 0; }
-    .row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom: 8px; }
-    .btn { padding: 10px 14px; border: 0; border-radius: 8px; background:#111; color:#fff; }
-    .btn.gray { background:#666; }
-    .btn.red { background:#8b2323; }
-    input { width:100%; padding:10px; border-radius:8px; border:1px solid #4443; background:transparent; }
-    .log { background:#000; color:#0f0; padding:10px; border-radius:8px; min-height:48px; white-space:pre-wrap; }
-    .ok { color:#0a0; }
-    .bad{ color:#c33; }
-    .pill { padding:4px 8px; border-radius:999px; background:#000; color:#fff; font-size:12px; }
+    .card { background: var(--card); border-radius: 12px; padding: 14px; margin: 14px 0; box-shadow: 0 2px 16px rgba(0,0,0,.35); }
+    .row { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media(min-width:920px){ .row-2 { grid-template-columns: 1fr 1fr; } }
+    label { font-size: 12px; color: var(--muted); display:block; margin: 6px 0 4px; }
+    input, select { width: 100%; padding: 10px 12px; border: 1px solid #333; border-radius: 8px; background:#101114; color: var(--fg); }
+    button { border:0; background:#222; color:var(--fg); padding:10px 14px; border-radius:10px; cursor:pointer; }
+    button.ok { background: var(--ok); color:#000; font-weight:700; }
+    button.warn { background: var(--accent); }
+    .btnline { display:flex; gap:8px; flex-wrap:wrap; }
+    pre { background:#000; color:#3cff71; padding:12px; border-radius:10px; overflow:auto; min-height:64px; }
+    .tag { display:inline-block; padding:4px 8px; background:#222; border-radius:6px; color:#ccc; font-size:12px; }
   </style>
 </head>
 <body>
   <h1>MMORPG Admin</h1>
 
   <div class="card">
-    <div class="row"><b>Admin secret</b></div>
     <div class="row">
-      <input id="secret" placeholder="••••••••" />
+      <div>
+        <label>Admin secret</label>
+        <input id="secret" type="password" placeholder="Escribe tu clave admin" />
+      </div>
     </div>
-    <div class="row">
-      <button class="btn" id="saveSecret">Guardar clave</button>
-      <button class="btn gray" id="forgetSecret">Olvidar clave</button>
-      <button class="btn" id="testSecret">Probar clave</button>
-      <span id="secretStatus" class="pill">—</span>
-    </div>
-    <small>Se envía en el header <code>x-admin-secret</code> y se guarda localmente.</small>
-  </div>
-
-  <div class="card">
-    <h2>Progreso global</h2>
-    <div class="row">
-      <button class="btn" id="btnView">Ver progreso</button>
-      <button class="btn gray" id="btnPlus5">+5</button>
-      <button class="btn gray" id="btnPlus100">+100</button>
-    </div>
-    <div class="row"><input id="gCurrent" placeholder="current" inputmode="numeric"/></div>
-    <div class="row"><input id="gGoal" placeholder="goal" inputmode="numeric"/></div>
-    <div class="row"><input id="gStage" placeholder="stage" inputmode="numeric"/></div>
-    <div class="row"><button class="btn" id="btnSaveGlobal">Guardar</button></div>
-  </div>
-
-  <div class="card">
-    <h2>Jugadores</h2>
-    <div class="row">
-      <button class="btn" id="btnList">Listar</button>
-      <button class="btn gray" id="btnTop10">Top 10 (XP)</button>
-    </div>
-    <div class="row"><input id="pName" placeholder="name (único)" /></div>
-    <div class="row"><input id="pLevel" placeholder="level" inputmode="numeric"/></div>
-    <div class="row"><input id="pXP" placeholder="xp (opcional)" inputmode="numeric"/></div>
-    <div class="row">
-      <button class="btn" id="btnUpsert">Crear/Actualizar</button>
-      <button class="btn gray" id="btnAddXP">+50 XP</button>
-      <button class="btn red" id="btnDelete">Borrar jugador</button>
+    <div class="btnline">
+      <button id="saveSecret" class="ok">Guardar clave</button>
+      <button id="forgetSecret">Olvidar clave</button>
+      <span class="tag">Se envía en el header <b>x-admin-secret</b></span>
     </div>
   </div>
 
-  <div class="card">
+  <div class="row row-2">
+    <!-- Progreso global -->
+    <section class="card">
+      <h2>Progreso global</h2>
+      <div class="btnline">
+        <button id="btnViewGlobal">Ver progreso</button>
+        <button id="btnPlus5">+5</button>
+        <button id="btnPlus100">+100</button>
+      </div>
+      <label>current</label><input id="g_current" type="number" value="0" />
+      <label>goal</label><input id="g_goal" type="number" value="10000" />
+      <label>stage</label><input id="g_stage" type="number" value="0" />
+      <div class="btnline"><button id="btnSaveGlobal" class="ok">Guardar</button></div>
+    </section>
+
+    <!-- Jugadores -->
+    <section class="card">
+      <h2>Jugadores</h2>
+      <div class="btnline">
+        <button id="btnListPlayers">Listar</button>
+        <button id="btnTop">Top 10 (XP)</button>
+      </div>
+      <label>name (único)</label><input id="p_name" placeholder="Jugador1" />
+      <label>level</label><input id="p_level" type="number" value="1" />
+      <label>xp (opcional)</label><input id="p_xp" type="number" value="0" />
+      <div class="btnline">
+        <button id="btnUpsert" class="ok">Crear/Actualizar</button>
+        <button id="btnAdd50">+50 XP</button>
+        <button id="btnDelete" class="warn">Borrar jugador</button>
+      </div>
+      <div class="btnline">
+        <button id="btnPruneOne">PRUNE por nombre (limpia duplicados)</button>
+        <button id="btnPruneAll">PRUNE-ALL (normaliza colección)</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Quests -->
+  <section class="card">
+    <h2>Quests</h2>
+    <div class="btnline">
+      <button id="qList">Listar</button>
+    </div>
+    <div class="row row-2">
+      <div>
+        <label>title</label><input id="q_title" placeholder="Recolecta 10 gemas" />
+      </div>
+      <div>
+        <label>status</label>
+        <select id="q_status">
+          <option value="open">open</option>
+          <option value="doing">doing</option>
+          <option value="done">done</option>
+        </select>
+      </div>
+    </div>
+    <div class="btnline">
+      <button id="qCreate" class="ok">Crear</button>
+      <input id="q_id" placeholder="id para editar/borrar" style="max-width:220px" />
+      <button id="qEdit">Editar</button>
+      <button id="qDelete" class="warn">Borrar</button>
+    </div>
+  </section>
+
+  <!-- Salida -->
+  <section class="card">
     <h2>Salida</h2>
-    <div id="out" class="log">-</div>
-  </div>
+    <pre id="out">-</pre>
+  </section>
 
 <script>
-const out = (x) => {
-  const el = document.getElementById("out");
-  el.textContent = typeof x === "string" ? x : JSON.stringify(x, null, 2);
-};
+const BASE = ""; // mismo host
+const out = (x) => { document.getElementById("out").textContent =
+  (typeof x === "string") ? x : JSON.stringify(x, null, 2); };
 
-// --------- SECRET ----------
-const secretInput = document.getElementById("secret");
-const secretKey = "adminSecret";
-function getSecret() { return (localStorage.getItem(secretKey) || "").trim(); }
-function headers() {
-  const s = getSecret();
-  const h = { "Content-Type": "application/json" };
-  if (s) h["x-admin-secret"] = s;
-  return h;
-}
-function setSecretBadge(ok, msg) {
-  const s = document.getElementById("secretStatus");
-  s.textContent = msg || (ok ? "OK" : "NOK");
-  s.className = "pill " + (ok ? "ok" : "bad");
-}
+const secretEl = document.getElementById("secret");
+const loadSecret = () => secretEl.value = localStorage.getItem("ADMIN_SECRET") || "";
+const getHdr = () => {
+  const s = secretEl.value.trim();
+  return s ? { "x-admin-secret": s, "Content-Type": "application/json" }
+           : { "Content-Type": "application/json" };
+};
 document.getElementById("saveSecret").onclick = () => {
-  localStorage.setItem(secretKey, secretInput.value.trim());
-  setSecretBadge(true, "Guardada");
-  out("Clave guardada.");
+  localStorage.setItem("ADMIN_SECRET", secretEl.value.trim()); out({ ok:true, msg:"Clave guardada" });
 };
 document.getElementById("forgetSecret").onclick = () => {
-  localStorage.removeItem(secretKey);
-  secretInput.value = "";
-  setSecretBadge(false, "Borrada");
-  out("Clave borrada.");
+  localStorage.removeItem("ADMIN_SECRET"); secretEl.value=""; out({ ok:true, msg:"Clave borrada" });
 };
-document.getElementById("testSecret").onclick = async () => {
-  try {
-    const r = await fetch("./__debug/secret", { headers: headers() });
-    const j = await r.json();
-    setSecretBadge(!!j.match, j.match ? "Válida" : "Inválida");
-    out(j);
-  } catch (e) { out(e.message); }
-};
-// init
-secretInput.value = getSecret();
+loadSecret();
 
-// --------- GLOBAL ----------
-async function getGlobal() {
-  const r = await fetch("./global");
-  const j = await r.json();
-  document.getElementById("gCurrent").value = j.current ?? 0;
-  document.getElementById("gGoal").value = j.goal ?? 0;
-  document.getElementById("gStage").value = j.stage ?? 0;
-  out(j);
-}
-async function saveGlobal() {
-  const body = {
-    current: Number(document.getElementById("gCurrent").value || 0),
-    goal: Number(document.getElementById("gGoal").value || 0),
-    stage: Number(document.getElementById("gStage").value || 0),
-  };
-  const r = await fetch("./global", {
-    method: "PATCH",
-    headers: headers(),
-    body: JSON.stringify(body)
-  });
-  out(await r.json());
-}
-document.getElementById("btnView").onclick = getGlobal;
-document.getElementById("btnSaveGlobal").onclick = saveGlobal;
-document.getElementById("btnPlus5").onclick = () => {
-  const el = document.getElementById("gCurrent");
-  el.value = Number(el.value || 0) + 5;
+// ---- Global
+const gcur = document.getElementById("g_current");
+const ggoal = document.getElementById("g_goal");
+const gst = document.getElementById("g_stage");
+document.getElementById("btnViewGlobal").onclick = async () => {
+  const r = await fetch(`${BASE}/global`); const j = await r.json(); out(j);
+  gcur.value = j.current ?? 0; ggoal.value = j.goal ?? 0; gst.value = j.stage ?? 0;
 };
-document.getElementById("btnPlus100").onclick = () => {
-  const el = document.getElementById("gCurrent");
-  el.value = Number(el.value || 0) + 100;
+document.getElementById("btnPlus5").onclick = () => gcur.value = Number(gcur.value||0) + 5;
+document.getElementById("btnPlus100").onclick = () => gcur.value = Number(gcur.value||0) + 100;
+document.getElementById("btnSaveGlobal").onclick = async () => {
+  const r = await fetch(`${BASE}/global`, { method:"PATCH", headers:getHdr(),
+    body: JSON.stringify({ current:Number(gcur.value||0), goal:Number(ggoal.value||0), stage:Number(gst.value||0) })});
+  out(await r.json());
 };
 
-// --------- PLAYERS ----------
-async function listPlayers() {
-  const r = await fetch("./players");
-  out(await r.json());
-}
-async function top10() {
-  const r = await fetch("./leaderboard?limit=10");
-  out(await r.json());
-}
-async function upsertPlayer() {
-  const name = document.getElementById("pName").value.trim();
-  const level = Number(document.getElementById("pLevel").value || 1);
-  const xpVal = Number(document.getElementById("pXP").value || 0);
-  if (!name) return out("name requerido");
-  const r = await fetch("./players/" + encodeURIComponent(name), {
-    method: "PUT",
-    headers: headers(),
-    body: JSON.stringify({ level, xp: xpVal })
+// ---- Players
+const pname = document.getElementById("p_name");
+const plevel = document.getElementById("p_level");
+const pxp = document.getElementById("p_xp");
+
+document.getElementById("btnListPlayers").onclick = async () => {
+  const r = await fetch(`${BASE}/players?limit=50`); out(await r.json());
+};
+document.getElementById("btnTop").onclick = async () => {
+  const r = await fetch(`${BASE}/leaderboard?limit=10`); out(await r.json());
+};
+document.getElementById("btnUpsert").onclick = async () => {
+  const name = pname.value.trim(); if(!name) return out("name requerido");
+  const r = await fetch(`${BASE}/players/${encodeURIComponent(name)}`, {
+    method:"PUT", headers:getHdr(),
+    body: JSON.stringify({ level:Number(plevel.value||1), xp:Number(pxp.value||0) })
   });
   out(await r.json());
-}
-async function addXP() {
-  const name = document.getElementById("pName").value.trim();
-  if (!name) return out("name requerido");
-  const r = await fetch("./players/addxp", {
-    method: "POST",
-    headers: headers(),
-    body: JSON.stringify({ name, xp: 50 })
-  });
+};
+document.getElementById("btnAdd50").onclick = async () => {
+  const name = pname.value.trim(); if(!name) return out("name requerido");
+  const r = await fetch(`${BASE}/players/addxp`, {
+    method:"POST", headers:getHdr(), body: JSON.stringify({ name, xp:50 })
+  }); out(await r.json());
+};
+document.getElementById("btnDelete").onclick = async () => {
+  const name = pname.value.trim(); if(!name) return out("name requerido");
+  const r = await fetch(`${BASE}/players/${encodeURIComponent(name)}`, {
+    method:"DELETE", headers:getHdr()
+  }); out(await r.json());
+};
+document.getElementById("btnPruneOne").onclick = async () => {
+  const name = pname.value.trim(); if(!name) return out("name requerido");
+  const r = await fetch(`${BASE}/players/prune?name=${encodeURIComponent(name)}`, {
+    method:"POST", headers:getHdr()
+  }); out(await r.json());
+};
+document.getElementById("btnPruneAll").onclick = async () => {
+  const r = await fetch(`${BASE}/players/prune-all`, { method:"POST", headers:getHdr() });
   out(await r.json());
-}
-async function deletePlayer() {
-  const name = document.getElementById("pName").value.trim();
-  if (!name) return out("name requerido");
-  const r = await fetch("./players/delete", {
-    method: "POST",
-    headers: headers(),
-    body: JSON.stringify({ name })
-  });
+};
+
+// ---- Quests
+const q_title = document.getElementById("q_title");
+const q_status = document.getElementById("q_status");
+const q_id = document.getElementById("q_id");
+
+document.getElementById("qList").onclick = async () => {
+  const r = await fetch(`${BASE}/quests`); out(await r.json());
+};
+document.getElementById("qCreate").onclick = async () => {
+  const r = await fetch(`${BASE}/quests`, { method:"POST", headers:getHdr(),
+    body: JSON.stringify({ title:q_title.value.trim(), status:q_status.value }) });
   out(await r.json());
-}
-document.getElementById("btnList").onclick = listPlayers;
-document.getElementById("btnTop10").onclick = top10;
-document.getElementById("btnUpsert").onclick = upsertPlayer;
-document.getElementById("btnAddXP").onclick = addXP;
-document.getElementById("btnDelete").onclick = deletePlayer;
+};
+document.getElementById("qEdit").onclick = async () => {
+  const id = q_id.value.trim(); if(!id) return out("id requerido");
+  const r = await fetch(`${BASE}/quests/${encodeURIComponent(id)}`, { method:"PATCH", headers:getHdr(),
+    body: JSON.stringify({ title:q_title.value.trim(), status:q_status.value }) });
+  out(await r.json());
+};
+document.getElementById("qDelete").onclick = async () => {
+  const id = q_id.value.trim(); if(!id) return out("id requerido");
+  const r = await fetch(`${BASE}/quests/${encodeURIComponent(id)}`, { method:"DELETE", headers:getHdr() });
+  out(await r.json());
+};
 </script>
 </body>
 </html>

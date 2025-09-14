@@ -1,211 +1,174 @@
-// index.js — API completa y estáticos
+// index.js — API pública y páginas
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import { Firestore, FieldValue } from "@google-cloud/firestore";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
 
-// Sirve /public (admin.html, player.html, signup.html, game.html, _nav.html, etc.)
-app.use(express.static("public"));
+// Servir /public (admin.html, player.html, signup.html, _nav.html, etc.)
+app.use(express.static(path.join(__dirname, "public")));
 
 const db = new Firestore();
-const PORT = process.env.PORT || 8080;
 
-// ====== Constantes de BD ======
-const ROOT_COLLECTION = "world_progress";
-const GLOBAL_DOC_ID = "global";
-const PLAYERS_SUBCOLL = "world_progress"; // subcolección bajo /world_progress/global
-const ENEMIES_SUBCOLL = "enemies";        // subcolección bajo /world_progress/global
-const ITEMS_SUBCOLL   = "items";          // por si luego agregas items
+// --- Constantes de datos ---
+const ROOT = "world_progress";
+const GLOBAL = "global";
+const PLAYERS = "world_progress";  // subcolección dentro de /world_progress/global
+const ENEMIES = "enemies";
 
-// ====== Util ======
-const toInt = (v, def = 0) => {
+// --- Utilidades ---
+const toInt = (v, d = 0) => {
   const n = Number(v);
-  return Number.isFinite(n) ? Math.trunc(n) : def;
+  return Number.isFinite(n) ? Math.trunc(n) : d;
 };
-const sendErr = (res, code, http = 500, extra = {}) =>
-  res.status(http).json({ error: code, ...extra });
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-// ====== Home ======
+// ------------------------------------------------------------------
+// Home
 app.get("/", (_req, res) => {
   res.json({
     service: "mmorpgapi",
     time: new Date().toISOString(),
     endpoints: [
-      "GET    /public/enemies",
-      "POST   /public/register        {name, level?}",
-      "POST   /public/attack          {name, enemyId}",
-      "GET    /leaderboard?limit=10",
-      "GET    /global",
-      "PATCH  /global                 {current?, goal?, stage?}"
+      "GET  /public/enemies",
+      "POST /public/register        { name, level? }",
+      "POST /public/attack          { name, enemyId }",
+      "GET  /public/leaderboard?limit=10",
+      "GET  /player   (player.html)",
+      "GET  /admin    (admin.html)",
+      "GET  /signup   (signup.html)"
     ]
   });
 });
 
-// ====== GLOBAL (admin o público de solo lectura) ======
-app.get("/global", async (_req, res) => {
-  try {
-    const snap = await db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).get();
-    const data = snap.exists ? snap.data() : {};
-    res.json({
-      current: toInt(data.current, 0),
-      goal: toInt(data.goal, 0),
-      stage: toInt(data.stage, 0)
-    });
-  } catch (e) {
-    console.error("GET /global", e);
-    sendErr(res, "failed_get_global");
-  }
-});
+// ------------------------------------------------------------------
+// Rutas PÚBLICAS usadas por player.html y signup.html
 
-app.patch("/global", async (req, res) => {
-  try {
-    const { current, goal, stage } = req.body || {};
-    const payload = {};
-    if (Number.isFinite(Number(current))) payload.current = toInt(current);
-    if (Number.isFinite(Number(goal))) payload.goal = toInt(goal);
-    if (Number.isFinite(Number(stage))) payload.stage = toInt(stage);
-
-    await db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).set(payload, { merge: true });
-    const snap = await db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID).get();
-    res.json(snap.data() || {});
-  } catch (e) {
-    console.error("PATCH /global", e);
-    sendErr(res, "failed_patch_global");
-  }
-});
-
-// ====== PUBLIC: enemies ======
+// Lista de enemigos
 app.get("/public/enemies", async (_req, res) => {
   try {
-    const qs = await db
-      .collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
-      .collection(ENEMIES_SUBCOLL)
-      .orderBy("power", "asc")
-      .get();
-
+    const col = db.collection(ROOT).doc(GLOBAL).collection(ENEMIES);
+    const qs = await col.orderBy("power").get();
     const items = qs.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
-    res.json(items);
+    return res.json(items);
   } catch (e) {
     console.error("GET /public/enemies", e);
-    sendErr(res, "failed_list_enemies");
+    return res.status(500).json({ error: "failed_list_enemies" });
   }
 });
 
-// ====== PUBLIC: register/asegurar jugador ======
+// Registro / asegurar jugador
 app.post("/public/register", async (req, res) => {
   try {
     const name = String(req.body?.name || "").trim();
-    const level = Math.max(1, toInt(req.body?.level, 1));
-    if (!name) return sendErr(res, "name_required", 400);
+    const level = clamp(toInt(req.body?.level, 1), 1, 99);
+    if (!name) return res.status(400).json({ error: "name_required" });
 
-    const ref = db
-      .collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
-      .collection(PLAYERS_SUBCOLL).doc(name);
+    const pref = db.collection(ROOT).doc(GLOBAL).collection(PLAYERS).doc(name);
+    await pref.set(
+      { name, level, xp: toInt(req.body?.xp, 0) },
+      { merge: true }
+    );
 
-    await ref.set({ name, level, xp: toInt(req.body?.xp, 0) }, { merge: true });
-    const snap = await ref.get();
-    res.json(snap.data() || { name, level, xp: 0 });
+    const snap = await pref.get();
+    return res.json(snap.data() || { name, level, xp: 0 });
   } catch (e) {
     console.error("POST /public/register", e);
-    sendErr(res, "failed_register");
+    return res.status(500).json({ error: "failed_register" });
   }
 });
 
-// ====== PUBLIC: attack ======
+// Atacar enemigo
 app.post("/public/attack", async (req, res) => {
   try {
     const name = String(req.body?.name || "").trim();
     const enemyId = String(req.body?.enemyId || "").trim();
-    if (!name || !enemyId) return sendErr(res, "name_and_enemy_required", 400);
+    if (!name) return res.status(400).json({ error: "name_required" });
+    if (!enemyId) return res.status(400).json({ error: "enemy_required" });
 
-    // 1) Cargar enemigo
-    const enemyRef = db
-      .collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
-      .collection(ENEMIES_SUBCOLL).doc(enemyId);
-    const enemySnap = await enemyRef.get();
-    if (!enemySnap.exists) return sendErr(res, "enemy_not_found", 404);
-    const enemy = enemySnap.data();
+    // Cargar enemigo
+    const eref = db.collection(ROOT).doc(GLOBAL).collection(ENEMIES).doc(enemyId);
+    const esnap = await eref.get();
+    if (!esnap.exists) return res.status(404).json({ error: "enemy_not_found" });
+    const enemy = esnap.data();
 
-    // 2) Cargar/crear jugador
-    const playerRef = db
-      .collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
-      .collection(PLAYERS_SUBCOLL).doc(name);
-    let playerSnap = await playerRef.get();
-    if (!playerSnap.exists) {
-      await playerRef.set({ name, level: 1, xp: 0 });
-      playerSnap = await playerRef.get();
+    // Cargar/crear jugador
+    const pref = db.collection(ROOT).doc(GLOBAL).collection(PLAYERS).doc(name);
+    let psnap = await pref.get();
+    if (!psnap.exists) {
+      await pref.set({ name, level: 1, xp: 0 });
+      psnap = await pref.get();
     }
-    const player = playerSnap.data();
+    const player = psnap.data();
 
-    // 3) Resolver batalla: súper simple (ajústalo a tu gusto)
-    const powerPlayer = player.level * 10;
-    const powerEnemy = toInt(enemy.power, 1);
-    const baseWinChance = Math.min(0.9, Math.max(0.1, (powerPlayer / (powerPlayer + powerEnemy)))); // 10%–90%
-    const rng = Math.random();
-    const win = rng < baseWinChance;
+    // Lógica simple de combate y XP
+    const level = toInt(player.level, 1);
+    const power = toInt(enemy.power, 1);
+    const baseChance = 0.5 + (level - power) / 100; // nivel vs poder
+    const chance = clamp(baseChance, 0.1, 0.9);
+    const roll = Math.random();
+    const win = roll < chance;
 
-    let gainedXp = 0;
-    let levelUp = false;
-
+    let xpGain = 0;
     if (win) {
-      gainedXp = toInt(enemy.rewardXp, 5);
-      const newXp = toInt(player.xp, 0) + gainedXp;
-      // regla simple: cada 100 xp = +1 nivel (puedes cambiarla)
-      const addLevels = Math.floor(newXp / 100) - Math.floor(toInt(player.xp,0) / 100);
-      const newLevel = toInt(player.level, 1) + Math.max(0, addLevels);
-      levelUp = addLevels > 0;
-
-      await playerRef.set({ xp: newXp, level: newLevel }, { merge: true });
-
-      // opcional: avanza progreso global
-      await db.collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
-        .set({ current: FieldValue.increment(1) }, { merge: true });
-
-      res.json({
-        ok: true,
-        result: "win",
-        gainedXp,
-        player: { name, level: newLevel, xp: newXp },
-        debug: { baseWinChance, rng }
-      });
-    } else {
-      res.json({
-        ok: true,
-        result: "lose",
-        gainedXp: 0,
-        player: { name, level: player.level, xp: player.xp },
-        debug: { baseWinChance, rng }
-      });
+      xpGain = toInt(enemy.rewardXp, 0);
+      await pref.update({ xp: FieldValue.increment(xpGain) });
+      await db.collection(ROOT).doc(GLOBAL).set(
+        { current: FieldValue.increment(xpGain) },
+        { merge: true }
+      );
     }
+
+    return res.json({
+      ok: true,
+      win,
+      chance,
+      roll,
+      xpGain,
+      enemy: { id: enemy.id, name: enemy.name, power: enemy.power, rewardXp: enemy.rewardXp }
+    });
   } catch (e) {
     console.error("POST /public/attack", e);
-    sendErr(res, "failed_attack");
+    return res.status(500).json({ error: "failed_attack" });
   }
 });
 
-// ====== Leaderboard ======
-app.get("/leaderboard", async (req, res) => {
+// Leaderboard Top N por XP
+app.get("/public/leaderboard", async (req, res) => {
   try {
-    const limit = Math.min(Math.max(toInt(req.query.limit, 10), 1), 100);
+    const limit = clamp(toInt(req.query?.limit, 10), 1, 50);
     const qs = await db
-      .collection(ROOT_COLLECTION).doc(GLOBAL_DOC_ID)
-      .collection(PLAYERS_SUBCOLL)
-      .orderBy("xp", "desc")
-      .limit(limit)
-      .get();
-
+      .collection(ROOT).doc(GLOBAL).collection(PLAYERS)
+      .orderBy("xp", "desc").limit(limit).get();
     const items = qs.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
-    res.json(items);
+    return res.json(items);
   } catch (e) {
-    console.error("GET /leaderboard", e);
-    sendErr(res, "failed_leaderboard");
+    console.error("GET /public/leaderboard", e);
+    return res.status(500).json({ error: "failed_leaderboard" });
   }
 });
 
-// ====== Arranque ======
+// ------------------------------------------------------------------
+// Aliases para servir las páginas por ruta "bonita"
+app.get("/player", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "player.html"));
+});
+app.get("/admin", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin.html"));
+});
+app.get("/signup", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "signup.html"));
+});
+
+// ------------------------------------------------------------------
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`mmorpgapi listening on ${PORT}`);
 });

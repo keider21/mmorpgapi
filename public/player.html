@@ -1,47 +1,36 @@
-<body>
-  <div id="nav"></div>
-  <script>
-    fetch("/_nav.html").then(r=>r.text()).then(html => {
-      document.getElementById("nav").innerHTML = html;
-    });
-  </script>
-  <!-- el resto de tu página -->
 <!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Panel del Jugador</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Panel del Jugador — MMORPG</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:#0f1115; --card:#171a21; --muted:#b7c0d0; --acc:#ff7143; --line:#232735; --ok:#3ddc97; --warn:#ffcb2b; --bad:#ff4d4f;
+  :root{
+    --bg:#0b0e13; --card:#12161f; --line:#232a38;
+    --ink:#e9edf2; --muted:#9aa3b2;
+    --accent1:#ff7a59; --accent2:#ff5e62;
+    --good:#46d08f; --danger:#ee5d6a;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:radial-gradient(1200px 700px at 50% -200px,#1b2230 0%,#0f1115 60%),var(--bg);color:#e6e9ef;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}
-  .wrap{max-width:960px;margin:24px auto;padding:0 14px}
-  h1{font-size:28px;margin:6px 0 16px;font-weight:800}
-  .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-  .row{display:flex;gap:12px;flex-wrap:wrap}
-  .row > *{flex:1 1 260px}
-  label{display:block;font-size:13px;color:var(--muted);margin:6px 0}
-  input,select{width:100%;background:#0f131b;border:1px solid var(--line);color:#e6e9ef;border-radius:10px;padding:12px 12px;font-size:16px}
-  .btn{display:inline-block;border:none;border-radius:10px;padding:12px 16px;font-weight:700;font-size:15px;cursor:pointer;transition:.2s}
-  .btn-primary{background:linear-gradient(90deg,#ff7b45,#ff4d4f);color:#fff}
-  .btn-ghost{background:#0f131b;border:1px solid var(--line);color:#e6e9ef}
-  .btn-ok{background:#1d3f33;color:#7ff0c6;border:1px solid #2d6f5a}
-  .btn-warn{background:#342b0f;color:#ffcb2b;border:1px solid #5a4b17}
-  .grid{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
-  .list{border:1px solid var(--line);border-radius:12px;overflow:hidden}
-  .rowi{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border-top:1px solid var(--line);padding:10px}
-  .rowi:first-child{border-top:none}
-  .muted{color:var(--muted);font-size:13px}
-  pre{background:#0b0e14;border-radius:12px;padding:12px;overflow:auto;border:1px solid var(--line)}
-  .tag{display:inline-block;background:#0f131b;border:1px solid var(--line);padding:4px 8px;border-radius:100px;font-size:12px;color:#cbd5e1;margin-right:6px}
-  .equip{border:1px dashed var(--line);padding:10px;border-radius:12px}
-  .drop{background:#14211b;border:1px solid #234635;color:#9cefcb;padding:8px 10px;border-radius:10px;margin:6px 0;font-size:14px}
+  body{margin:0; background:radial-gradient(80% 100% at 50% -20%, #162033 0%, #0b0e13 55%) fixed; color:var(--ink); font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+  .wrap{max-width:980px; margin:18px auto; padding:0 14px}
+  h1{font-weight:800; letter-spacing:.3px}
+  .card{background:linear-gradient(180deg,#0f141dCC,#0f141dCC),var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 14px; margin:14px 0; box-shadow:0 12px 40px #0006}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  @media (max-width:720px){ .row{grid-template-columns:1fr} }
+  label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
+  input,select{width:100%; background:#0e1420; color:var(--ink); border:1px solid var(--line); border-radius:10px; padding:12px 12px; outline:0}
+  .btn{background:linear-gradient(180deg,var(--accent1),var(--accent2)); color:#101015; border:0; padding:12px 16px; border-radius:12px; font-weight:800; letter-spacing:.4px; cursor:pointer}
+  .btn:disabled{filter:grayscale(.7) brightness(.8); cursor:not-allowed}
+  .muted{color:var(--muted)}
+  .pill{display:inline-block; background:#0f1522; border:1px solid var(--line); padding:6px 10px; border-radius:999px; font-size:12px; margin-right:6px}
+  .log{background:#0b0f18; border:1px solid #223044; border-radius:10px; padding:10px; font-family:ui-monospace,Consolas,monospace; white-space:pre-wrap}
+  table{width:100%; border-collapse:collapse}
+  th,td{padding:10px; border-bottom:1px solid var(--line); text-align:left; font-size:14px}
+  th{colors:var(--muted); font-weight:600}
+  .good{color:var(--good)} .bad{color:var(--danger)}
 </style>
 </head>
 <body>
@@ -49,279 +38,172 @@
   <h1>Panel del Jugador</h1>
 
   <div class="card">
-    <div class="row">
-      <div>
-        <label>Tu nombre</label>
-        <input id="iName" placeholder="Jugador1">
-      </div>
+    <label>Tu nombre</label>
+    <input id="name" placeholder="Ej: Keider">
+    <div class="row" style="margin-top:10px">
+      <button id="saveName" class="btn">Guardar nombre</button>
+      <button id="forget" class="btn" style="background:#202736;color:var(--ink)">Olvidar</button>
     </div>
-    <div class="row">
-      <button class="btn btn-primary" onclick="saveName()">Guardar nombre</button>
-      <button class="btn btn-ghost" onclick="forgetName()">Olvidar</button>
-      <span class="tag" id="tLevel">Nivel 1</span>
-      <span class="tag" id="tXP">XP 0/100</span>
+    <div style="margin-top:10px">
+      <span class="pill" id="p-level">Nivel 1</span>
+      <span class="pill" id="p-xp">XP 0/100</span>
     </div>
   </div>
 
   <div class="card">
-    <h3 style="margin-top:0">Progreso global</h3>
-    <div class="muted" id="tGlobal">-</div>
+    <h3 style="margin:6px 0 12px">Progreso global</h3>
+    <div class="muted" id="worldText">0%</div>
   </div>
 
   <div class="card">
-    <h3 style="margin-top:0">Batallas</h3>
-    <div class="row">
-      <div>
-        <label>Enemigo</label>
-        <select id="selEnemy"></select>
-      </div>
-      <div style="align-self:end">
-        <button class="btn btn-primary" onclick="attack()">¡Atacar!</button>
-      </div>
+    <h3 style="margin:6px 0 12px">Batallas</h3>
+    <label>Enemigo</label>
+    <select id="enemy"></select>
+    <div style="margin-top:12px">
+      <button id="attack" class="btn">¡Atacar!</button>
     </div>
-    <div id="drops"></div>
+    <div id="dropText" class="muted" style="margin-top:10px">Sin drops…</div>
   </div>
 
   <div class="card">
-    <h3 style="margin-top:0">Equipamiento</h3>
-    <div class="grid">
-      <div class="equip"><b>Arma:</b> <span id="eqWeapon">-</span></div>
-      <div>
-        <button class="btn btn-ghost" onclick="unequip('weapon')">Quitar</button>
-      </div>
-      <div class="equip"><b>Armadura:</b> <span id="eqArmor">-</span></div>
-      <div>
-        <button class="btn btn-ghost" onclick="unequip('armor')">Quitar</button>
-      </div>
-    </div>
+    <h3>Leaderboard (Top 10 XP)</h3>
+    <button id="btnTop" class="btn" style="margin:8px 0 12px">Ver Top</button>
+    <div id="topBox" class="muted">-</div>
   </div>
 
   <div class="card">
-    <h3 style="margin-top:0">Inventario</h3>
-    <div id="invList" class="list"></div>
-  </div>
-
-  <div class="card">
-    <h3 style="margin-top:0">Leaderboard (Top 10 XP)</h3>
-    <button class="btn btn-ghost" onclick="loadTop()">Ver Top</button>
-    <pre id="outTop">-</pre>
-  </div>
-
-  <div class="card">
-    <h3 style="margin-top:0">Salida</h3>
-    <pre id="out">-</pre>
+    <h3>Salida</h3>
+    <div id="out" class="log">-</div>
   </div>
 </div>
 
 <script>
-const BASE = location.origin;
-const out = (o) => document.getElementById("out").textContent =
-  typeof o === "string" ? o : JSON.stringify(o, null, 2);
+  // ===== Config general =====
+  const BASE = ""; // mismo host
+  const LS_NAME_KEY = "PLAYER_NAME";
 
-const nameInput = document.getElementById("iName");
-const tLevel = document.getElementById("tLevel");
-const tXP = document.getElementById("tXP");
-const tGlobal = document.getElementById("tGlobal");
-const selEnemy = document.getElementById("selEnemy");
-const dropsBox = document.getElementById("drops");
-const invList = document.getElementById("invList");
-const outTop = document.getElementById("outTop");
-const eqWeapon = document.getElementById("eqWeapon");
-const eqArmor  = document.getElementById("eqArmor");
+  // ===== Helpers =====
+  const $ = (id)=>document.getElementById(id);
+  const out = $("out");
+  function log(obj){ out.textContent = JSON.stringify(obj, null, 2); }
+  function showStat(p){ $("p-level").textContent = "Nivel " + (p.level||1); $("p-xp").textContent = "XP " + (p.xp||0) + "/100"; }
 
-function saveName(){
-  localStorage.setItem("playerName", nameInput.value.trim());
-  alert("Nombre guardado");
-  refreshAll();
-}
-function forgetName(){
-  localStorage.removeItem("playerName");
-  nameInput.value = "";
-  refreshAll();
-}
-function getName(){
-  return localStorage.getItem("playerName") || nameInput.value.trim();
-}
+  // ===== Carga inicial =====
+  async function loadWorld() {
+    try {
+      const r = await fetch(`${BASE}/global`);
+      const j = await r.json();
+      if (r.ok) {
+        const cur = Number(j.current||0), goal = Number(j.goal||10000), st = Number(j.stage||1);
+        const pct = goal>0 ? Math.floor((cur/goal)*100) : 0;
+        $("worldText").textContent = `${pct}% (current ${cur} / goal ${goal}, stage ${st})`;
+      } else throw j;
+    } catch(e){ log(e); }
+  }
 
-async function api(url, opts){
-  const r = await fetch(url, opts);
-  if (!r.ok) throw await r.json().catch(()=>({error:"http_"+r.status}));
-  return r.json();
-}
-
-async function loadGlobal(){
-  try{
-    const g = await api(`${BASE}/global`);
-    tGlobal.textContent = `0% (current ${g.current} / goal ${g.goal}, stage ${g.stage})`;
-  }catch(e){ out(e); }
-}
-
-async function ensurePlayer(){
-  const name = getName();
-  if (!name) return;
-  try{
-    // si no existe, PUT lo crea
-    const data = await api(`${BASE}/players/${encodeURIComponent(name)}`, {
-      method: "PUT",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({})
-    });
-    tLevel.textContent = `Nivel ${data.level ?? 1}`;
-    tXP.textContent = `XP ${data.xp ?? 0}/100`;
-  }catch(e){ out(e); }
-}
-
-async function loadEnemies(){
-  try{
-    const list = await api(`${BASE}/enemies`);
-    selEnemy.innerHTML = "";
-    list.forEach(e=>{
-      const opt = document.createElement("option");
-      opt.value = e.id;
-      opt.textContent = `${e.name} (Poder ${e.power})`;
-      selEnemy.appendChild(opt);
-    });
-  }catch(e){ out(e); }
-}
-
-async function loadInventory(){
-  const name = getName(); if (!name){ invList.innerHTML=""; return; }
-  try{
-    const items = await api(`${BASE}/players/${encodeURIComponent(name)}/inventory`);
-    invList.innerHTML = "";
-    if (!items.length){
-      invList.innerHTML = `<div class="rowi"><span class="muted">Sin ítems.</span><span></span><span></span></div>`;
-      return;
-    }
-    items.forEach(it=>{
-      const row = document.createElement("div");
-      row.className = "rowi";
-      row.innerHTML = `
-        <div>
-          <b>${it.name}</b> <span class="muted">(${it.type}${it.rarity? ", "+it.rarity:""})</span>
-          ${it.atk? `<span class="tag">ATK +${it.atk}</span>`:""}
-          ${it.def? `<span class="tag">DEF +${it.def}</span>`:""}
-        </div>
-        <div>
-          ${it.type==="potion"
-            ? `<button class="btn btn-ok" onclick="useItem('${it.id}')">Usar</button>`
-            : it.type==="weapon" || it.type==="armor"
-              ? `<button class="btn btn-warn" onclick="equipItem('${it.id}','${it.type}')">Equipar</button>`
-              : `<span class="muted">—</span>`
-          }
-        </div>
-        <div><button class="btn btn-ghost" onclick="deleteItem('${it.id}')">Eliminar</button></div>
-      `;
-      invList.appendChild(row);
-    });
-  }catch(e){ out(e); }
-}
-
-async function loadEquipment(){
-  const name = getName(); if (!name){ eqWeapon.textContent="-"; eqArmor.textContent="-"; return; }
-  try{
-    const eq = await api(`${BASE}/players/${encodeURIComponent(name)}/equipment`);
-    eqWeapon.textContent = eq.weapon ? `${eq.weapon.name} (ATK +${eq.weapon.atk||0})` : "-";
-    eqArmor.textContent  = eq.armor  ? `${eq.armor.name} (DEF +${eq.armor.def||0})`   : "-";
-  }catch(e){ out(e); }
-}
-
-async function attack(){
-  const name = getName();
-  const enemyId = selEnemy.value;
-  if (!name) return alert("Guarda tu nombre primero");
-  try{
-    const r = await api(`${BASE}/combat/attack`,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ name, enemyId })
-    });
-    dropsBox.innerHTML = "";
-    if (r.drops?.length){
-      r.drops.forEach(d=>{
-        const el = document.createElement("div");
-        el.className = "drop";
-        el.textContent = `¡Drop! ${d.item} (${d.type}${d.rarity? ", "+d.rarity:""})`;
-        dropsBox.appendChild(el);
+  async function loadEnemies() {
+    try {
+      const r = await fetch(`${BASE}/public/enemies`);
+      const j = await r.json();
+      if (!r.ok) throw j;
+      const sel = $("enemy");
+      sel.innerHTML = "";
+      j.forEach(e=>{
+        const opt = document.createElement("option");
+        opt.value = e.id;
+        opt.textContent = `${e.name} (Poder ${e.power})`;
+        sel.appendChild(opt);
       });
-    }else{
-      dropsBox.innerHTML = `<div class="muted">Sin drops...</div>`;
+    } catch(e){
+      log(e);
+      $("enemy").innerHTML = "";
     }
-    await ensurePlayer();
-    await loadInventory();
-    await loadEquipment();
-    out(r);
-  }catch(e){ out(e); }
-}
+  }
 
-async function useItem(id){
-  const name = getName();
-  try{
-    const r = await api(`${BASE}/players/${encodeURIComponent(name)}/inventory/use`,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ itemId:id })
-    });
-    await ensurePlayer();
-    await loadInventory();
-    out(r);
-  }catch(e){ out(e); }
-}
+  async function loadTop() {
+    try{
+      const r = await fetch(`${BASE}/public/leaderboard?limit=10`);
+      const j = await r.json();
+      if (!r.ok) throw j;
+      if (!Array.isArray(j) || !j.length){ $("topBox").textContent = "— Sin jugadores —"; return; }
+      let html = `<table><thead><tr><th>#</th><th>Jugador</th><th>Nivel</th><th>XP</th></tr></thead><tbody>`;
+      j.forEach((p,i)=>{ html += `<tr><td>${i+1}</td><td>${p.name||p.id}</td><td>${p.level||1}</td><td>${p.xp||0}</td></tr>`; });
+      html += `</tbody></table>`;
+      $("topBox").innerHTML = html;
+    }catch(e){ log(e); }
+  }
 
-async function deleteItem(id){
-  const name = getName();
-  try{
-    const r = await api(`${BASE}/players/${encodeURIComponent(name)}/inventory/${id}`,{ method:"DELETE" });
-    await loadInventory();
-    out(r);
-  }catch(e){ out(e); }
-}
+  // ===== Registro / nombre =====
+  function getName(){ return ($("name").value||"").trim(); }
+  function loadSavedName(){ const n = localStorage.getItem(LS_NAME_KEY)||""; $("name").value = n; return n; }
+  async function ensurePlayer(name){
+    const r = await fetch(`${BASE}/public/register`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ name }) });
+    const j = await r.json();
+    if (!r.ok) throw j;
+    showStat(j);
+    return j;
+  }
 
-async function equipItem(id, type){
-  const name = getName();
-  const slot = (type==="weapon") ? "weapon" : "armor";
-  try{
-    const r = await api(`${BASE}/players/${encodeURIComponent(name)}/equipment/equip`,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ slot, itemId:id })
-    });
-    await loadInventory();
-    await loadEquipment();
-    out(r);
-  }catch(e){ out(e); }
-}
-async function unequip(slot){
-  const name = getName();
-  try{
-    const r = await api(`${BASE}/players/${encodeURIComponent(name)}/equipment/unequip`,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ slot })
-    });
-    await loadInventory();
-    await loadEquipment();
-    out(r);
-  }catch(e){ out(e); }
-}
+  // ===== Acciones =====
+  $("saveName").onclick = async ()=>{
+    const name = getName();
+    if (!name) return alert("Escribe un nombre");
+    try{
+      localStorage.setItem(LS_NAME_KEY, name);
+      const p = await ensurePlayer(name);
+      log({ok:true, msg:"Nombre guardado", player:p});
+    }catch(e){ log(e); }
+  };
 
-async function loadTop(){
-  try{
-    const data = await api(`${BASE}/leaderboard?limit=10`);
-    outTop.textContent = JSON.stringify(data, null, 2);
-  }catch(e){ outTop.textContent = JSON.stringify(e,null,2); }
-}
+  $("forget").onclick = ()=>{
+    localStorage.removeItem(LS_NAME_KEY);
+    $("name").value = "";
+    showStat({level:1,xp:0});
+    log({ok:true,msg:"Nombre olvidado"});
+  };
 
-async function refreshAll(){
-  const n = localStorage.getItem("playerName");
-  if (n) nameInput.value = n;
-  await ensurePlayer();
-  await loadGlobal();
-  await loadEnemies();
-  await loadInventory();
-  await loadEquipment();
-}
-refreshAll();
+  $("attack").onclick = async ()=>{
+    const name = getName();
+    if (!name) return alert("Guarda tu nombre primero");
+    const enemyId = $("enemy").value;
+    if (!enemyId) return alert("No hay enemigo seleccionado");
+    try{
+      const r = await fetch(`${BASE}/public/attack`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ name, enemyId })
+      });
+      const j = await r.json();
+      log(j);
+      if (r.ok && j.ok){
+        // feedback UI
+        if (j.win){
+          $("dropText").textContent = `¡Victoria! +${j.xpGain} XP contra ${j.enemy.name}`;
+        } else {
+          $("dropText").textContent = `Derrota… probabilidad ${Math.round(j.chance*100)}%`;
+        }
+        // refrescar world + top
+        loadWorld();
+        loadTop();
+        // refrescar panel de jugador (xp aprox: sumar lo ganado si victoria)
+        const curXP = Number($("p-xp").textContent.split(" ")[1]?.split("/")[0] || 0);
+        const newXP = curXP + (j.win? (j.xpGain||0) : 0);
+        $("p-xp").textContent = `XP ${newXP}/100`;
+      } else {
+        // error desde API
+        // si atacaste muy rápido tras deploy y 404, aquí lo verás
+      }
+    }catch(e){ log(e); }
+  };
+
+  $("btnTop").onclick = loadTop;
+
+  // ===== Start =====
+  (async function init(){
+    const n = loadSavedName();
+    if (n){ try{ await ensurePlayer(n); }catch(_e){} }
+    await Promise.all([loadWorld(), loadEnemies(), loadTop()]);
+  })();
 </script>
 </body>
 </html>

@@ -1,0 +1,75 @@
+<!-- public/index.html -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Genesis Eternal — Inicio</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0b0e13;--card:#111623;--line:#222b3f;--ink:#e9edf2;--mut:#9aa3b2;--accent:#ff6a3d;}
+  *{box-sizing:border-box} body{margin:0;background:radial-gradient(70% 90% at 50% -20%,#1a2236 0%,#0b0e13 55%);color:var(--ink);font-family:Inter,system-ui}
+  .wrap{max-width:960px;margin:0 auto;padding:20px}
+  header{display:flex;justify-content:space-between;align-items:center}
+  h1{font:600 28px/1 Cinzel,serif;margin:0}
+  .card{margin:18px 0;background:linear-gradient(180deg,#0e1422cc,#0e1422cc),var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 12px 40px #0006}
+  .grid{display:grid;gap:12px} @media(min-width:760px){.grid{grid-template-columns:1fr 1fr}}
+  .btn{display:block;text-align:center;background:var(--accent);color:#111;padding:14px 16px;border-radius:12px;font-weight:800;letter-spacing:.4px;text-decoration:none}
+  .btn.alt{background:#232b40;color:var(--ink)}
+  .bar{height:10px;background:#0b1020;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff7f50,#ff3c32)}
+  .mut{color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Genesis Eternal</h1>
+    <nav>
+      <a href="signup.html" class="btn" style="display:inline-block;padding:10px 14px">Registrarse</a>
+    </nav>
+  </header>
+
+  <section class="card">
+    <h2 style="margin:0 0 10px">Progreso global</h2>
+    <div class="bar"><i id="gbar"></i></div>
+    <div id="gtext" class="mut" style="margin-top:8px">—</div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h3 style="margin:0 0 8px">Comenzar</h3>
+      <p class="mut" style="margin:0 0 12px">Crea tu cuenta y entra al mundo.</p>
+      <a href="signup.html" class="btn">Crear cuenta</a>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 8px">Ya tengo cuenta</h3>
+      <p class="mut" style="margin:0 0 12px">Accede a tu panel y combate.</p>
+      <a href="player.html" class="btn">Entrar a jugar</a>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 8px">Administración</h3>
+      <p class="mut" style="margin:0 0 12px">Gestiona enemigos, progreso y jugadores.</p>
+      <a href="admin.html" class="btn alt">Panel Admin</a>
+    </div>
+  </section>
+</div>
+
+<script>
+  // mismo host
+  const BASE = "";
+  async function loadGlobal(){
+    try{
+      const r = await fetch(`${BASE}/global`);
+      const g = await r.json();
+      const pct = g.goal ? Math.min(100, Math.round(100*(g.current||0)/g.goal)) : 0;
+      document.getElementById("gbar").style.width = pct+"%";
+      document.getElementById("gtext").textContent = `${pct}% (current ${g.current||0} / goal ${g.goal||0}, stage ${g.stage||0})`;
+    }catch{
+      document.getElementById("gtext").textContent = "No disponible";
+    }
+  }
+  loadGlobal();
+</script>
+</body>
+</html>
